@@ -1,0 +1,17 @@
+# DSA-110 hardware monitor and control configuration file.
+# dsamaster
+# Simulation flag (bool). True when in sim mode, False when using real hardware.
+sim: False
+# Maximum priority to log
+log_priority: 7
+# etcd connection details
+etcd_endpoint: "192.168.1.132:2379"
+# Lua script directory
+lua_dir: "./"
+# LabJack T7 hardware config directory
+labjack_conf_dir: "./"
+# Code and firmware version numbers (minimum)
+lj_hw_ver: 1.300
+lj_fw_ver: 1.029
+lj_boot_ver: 0.940
+lj_prod_id: 7
