@@ -543,7 +543,7 @@ class DsaAntLabJack:
         elif cmd == 'halt':
             ljm.eWriteName(self.lj_handle, 'USER_RAM0_U16', cmd_list[cmd])
 
-    def _halt(self):
+    def _halt(self, _):
         """Stop any elevation movement immediately.
 
         Logs the command and calls the low-level function to control the motor.
