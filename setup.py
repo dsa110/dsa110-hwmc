@@ -1,10 +1,11 @@
 """Setuptools information file"""
 
 from setuptools import setup
+from version import get_git_version
 
 setup(
     name='dsa110hwmc',
-    version='0.1',
+    version=get_git_version(),
     packages=['hwmc'],
     url='https://github.com/dsa110',
     license='California Institute of Technology',
