@@ -15,7 +15,7 @@ import time
 import tkinter as tk
 
 import etcd3 as etcd
-import get_yaml_config
+from hwmc import get_yaml_config
 
 ROW_PAD = 20
 COL_PAD = 30
@@ -441,7 +441,7 @@ class HwmcControlPanel:
         self.etcd.put(self.etcd_cmd_key, j_pkt)
 
 
-if __name__ == '__main__':
+def main():
     cpl_config = {'etcd_endpoint': '192.168.1.132:2379'
                  }
 
@@ -474,3 +474,8 @@ if __name__ == '__main__':
         t = REFRESH_SECONDS - time.time() % REFRESH_SECONDS
         time.sleep(t)
     print("Finished")
+
+
+if __name__ == '__main__':
+    main()
+
