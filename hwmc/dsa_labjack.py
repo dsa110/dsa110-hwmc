@@ -410,10 +410,10 @@ class DsaAntLabJack:
         self.monitor_points['lj_temp'] = a_values[14] - self.ABSOLUTE_ZERO
         dig_val = int(a_values[15])
         self.monitor_points['emergency_off'] = bool((dig_val >> 8) & 0b01)
-        self.monitor_points['drive_cmd'] = (dig_val >> 9) & 0b11
-        self.monitor_points['drive_act'] = (dig_val >> 14) & 0b11
-        self.monitor_points['drive_state'] = int(a_values[20])
-        self.monitor_points['brake_on'] = 1 - bool(((dig_val >> 13) & 0b01))
+        self.monitor_points['drv_cmd'] = (dig_val >> 9) & 0b11
+        self.monitor_points['drv_act'] = (dig_val >> 14) & 0b11
+        self.monitor_points['drv_state'] = int(a_values[20])
+        self.monitor_points['brake_on'] = bool(1 - ((dig_val >> 13) & 0b01))
         self.monitor_points['at_north_lim'] = bool(1 - ((dig_val >> 20) & 0b01))
         self.monitor_points['at_south_lim'] = bool(1 - ((dig_val >> 21) & 0b01))
         self.monitor_points['fan_err'] = bool((dig_val >> 22) & 0b01)
