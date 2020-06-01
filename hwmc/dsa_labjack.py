@@ -145,7 +145,8 @@ class DiscoverT7:
         """
         try:
             self.num_found, a_device_types, a_connection_types, a_serial_numbers, _ = \
-                ljm.listAll(ljm.constants.dtT7, ljm.constants.ctTCP)
+                ljm.listAll(ljm.constants.dtT7, ljm.constants.ctUSB)
+#                ljm.listAll(ljm.constants.dtT7, ljm.constants.ctTCP)
 
         except ljm.LJMError as err:
             # Get class for logging.
@@ -342,7 +343,7 @@ class DsaAntLabJack:
         ljm.eWriteName(self.lj_handle, "AIN_ALL_RANGE", 10.0)
 
         # Query LabJack for its current configuration.
-        startup_mp = sf.t7_startup_check(self.lj_handle)
+        startup_mp = sf.t7_startup_check(self.lj_handle, True)
 
         return startup_mp
 
@@ -535,7 +536,7 @@ class DsaAntLabJack:
             arg (float): Target elevation in degrees. Required only with 'move'
         """
         cmd_list = {'halt': 1,
-                    'move': 2
+                    'move': 2,
                     }
         if cmd == 'move' and arg is not None:
             ljm.eWriteName(self.lj_handle, 'USER_RAM1_F32', float(arg))
@@ -609,7 +610,7 @@ class DsaBebLabJack:
         self.etcd_cnf_key = []
         self.beb_num = beb_num
         self.etcd_valid = False
-        for i in range(10):
+        for i in range(self.BEB_PER_LJ):
             self.etcd_mon_key.append('/mon/beb/{0:d}'.format(beb_num + i))
             self.etcd_cnf_key.append('/cnf/beb/{0:d}'.format(beb_num + i))
         self.etcd_client = etcd.client(host=etcd_endpoint[0], port=etcd_endpoint[1])
@@ -657,7 +658,7 @@ class DsaBebLabJack:
         Returns:
             :obj:'dict': Dictionary of monitor points containing LJ T7 startup information.
         """
-        startup_mp = sf.t7_startup_check(self.lj_handle)
+        startup_mp = sf.t7_startup_check(self.lj_handle, False)
         # Analog section
         # Input voltage range
         ljm.eWriteName(self.lj_handle, "AIN_ALL_RANGE", 10.0)
@@ -679,7 +680,7 @@ class DsaBebLabJack:
             time_stamp = float("{:.8f}".format(Time.now().mjd))
             j = 0
             for i in range(self.BEB_PER_LJ):
-                self.monitor_points[i]['ant_num'] = self.BEB_PER_LJ * i + 1
+                self.monitor_points[i]['ant_num'] = self.beb_num + i
                 self.monitor_points[i]['time'] = float(time_stamp)
                 self.monitor_points[i]['pd_current_a'] = analog_vals[j]
                 j += 1
@@ -697,6 +698,8 @@ class DsaBebLabJack:
                 j += 1
                 self.monitor_points[i]['beb_temp'] = analog_vals[j]
                 j += 1
+                print(i)
+                print(self.monitor_points[i*self.BEB_PER_LJ:(i+1)*self.BEB_PER_LJ])
         return self.monitor_points
 
     def send_to_etcd(self, key, mon_data):

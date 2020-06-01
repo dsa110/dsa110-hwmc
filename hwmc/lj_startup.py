@@ -4,7 +4,7 @@ import time
 from labjack import ljm
 
 
-def t7_startup_check(lj_handle):
+def t7_startup_check(lj_handle, lua_required):
     """Read various parameters from the LabJack T7 device.
 
     Parameters that are read from the LabJack T7 include code versions, hardware serial number, etc.
@@ -13,6 +13,7 @@ def t7_startup_check(lj_handle):
 
     Args:
         lj_handle (int): Unique handle for the LabJack driver for this antenna.
+        lua_required (bool): Indicates if a Lua script should be present and running.
 
     Returns:
         start_up_state (dict): Dictionary of monitor points with the startup information acquired.
@@ -37,7 +38,7 @@ def t7_startup_check(lj_handle):
         d_name += chr(device)
     start_up_state['dev_name'] = d_name
     start_up_state['lua_running'] = bool(ljm.eReadName(lj_handle, 'LUA_RUN'))
-    if start_up_state['lua_running'] is False:
+    if start_up_state['lua_running'] is False and lua_required is True:
         print('Lua script not running. Attempting to load and start script')
         ljm.eWriteName(lj_handle, 'LUA_LOAD_SAVED', 1)
         time.sleep(2.0)

@@ -22,41 +22,51 @@ COL_PAD = 30
 
 # Dictionary of monitor points to display. This has to be manually synchronized with the antenna
 # control system.
-MPS = {'time': ("MJD", 'analog', "day"),
-       'ant_el': ("Elevation", 'analog', "°"),
-       'ant_cmd_el': ("El target", 'analog', "°"),
-       'ant_el_err': ("El error", 'analog', "°"),
-       'motor_temp': ("Motor temp", 'analog', "°C"),
-       'focus_temp': ("Motor temp", 'analog', "°C"),
-       'lj_temp': ("LabJack temperature", 'analog', "°C"),
-       'lna_current_a': ("LNA A current", 'analog', "mA"),
-       'lna_current_b': ("LNA B current", 'analog', "mA"),
-       'rf_pwr_a': ("RF A power", 'analog', "dBm"),
-       'rf_pwr_b': ("RF B power", 'analog', "dBm"),
-       'laser_volts_a': ("Laser A voltage", 'analog', "V"),
-       'laser_volts_b': ("Laser B voltage", 'analog', "V"),
-       'feb_current_a': ("FEB A current", 'analog', "mA"),
-       'feb_current_b': ("FEB B current", 'analog', "mA"),
-       'feb_temp_a': ("FEB A temperature", 'analog', "°C"),
-       'feb_temp_b': ("FEB B temperature", 'analog', "°C"),
-       'psu_volt': ("Power supply", 'analog', "V"),
-       'drv_cmd': ("Drive cmd", 'enum', ('halt', 'north', 'south', 'invalid')),
-       'drv_act': ("Drive actual", 'enum', ('off', 'north', 'south', 'invalid')),
-       'drv_state': ("Drive state", 'enum', ('halt', 'seek', 'acquired', 'timeout', 'fw_lim_n',
-                                             'fw_lim_s')),
-       'sim': ("Simulate", 'dig', None),
-       'brake_on': ("Brake", 'dig', None),
-       'at_north_lim': ("North limit", 'dig', None),
-       'at_south_lim': ("South limit", 'dig', None),
-       'fan_err': ("Fan error", 'dig', None),
-       'noise_a_on': ("Noise A", 'dig', None),
-       'noise_b_on': ("Noise B", 'dig', None),
-       'emergency_off': ("Emergency off", 'dig', None),
-       }
+ANT_MPS = {'time': ("MJD", 'analog', "day"),
+           'ant_el': ("Elevation", 'analog', "°"),
+           'ant_cmd_el': ("El target", 'analog', "°"),
+           'ant_el_err': ("El error", 'analog', "°"),
+           'motor_temp': ("Motor temp", 'analog', "°C"),
+           'focus_temp': ("Motor temp", 'analog', "°C"),
+           'lj_temp': ("LabJack temperature", 'analog', "°C"),
+           'lna_current_a': ("LNA A current", 'analog', "mA"),
+           'lna_current_b': ("LNA B current", 'analog', "mA"),
+           'rf_pwr_a': ("RF A power", 'analog', "dBm"),
+           'rf_pwr_b': ("RF B power", 'analog', "dBm"),
+           'laser_volts_a': ("Laser A voltage", 'analog', "V"),
+           'laser_volts_b': ("Laser B voltage", 'analog', "V"),
+           'feb_current_a': ("FEB A current", 'analog', "mA"),
+           'feb_current_b': ("FEB B current", 'analog', "mA"),
+           'feb_temp_a': ("FEB A temperature", 'analog', "°C"),
+           'feb_temp_b': ("FEB B temperature", 'analog', "°C"),
+           'psu_volt': ("Power supply", 'analog', "V"),
+           'drv_cmd': ("Drive cmd", 'enum', ('halt', 'north', 'south', 'invalid')),
+           'drv_act': ("Drive actual", 'enum', ('off', 'north', 'south', 'invalid')),
+           'drv_state': ("Drive state", 'enum', ('halt', 'seek', 'acquired', 'timeout', 'fw_lim_n',
+                                                 'fw_lim_s')),
+           'sim': ("Simulate", 'dig', None),
+           'brake_on': ("Brake", 'dig', None),
+           'at_north_lim': ("North limit", 'dig', None),
+           'at_south_lim': ("South limit", 'dig', None),
+           'fan_err': ("Fan error", 'dig', None),
+           'noise_a_on': ("Noise A", 'dig', None),
+           'noise_b_on': ("Noise B", 'dig', None),
+           'emergency_off': ("Emergency off", 'dig', None),
+           }
 
+BEB_MPS = {'time':  ("MJD", 'analog', "day"),
+           'pd_current_a': ("PD A current", 'analog', "mA"),
+           'beb_current_a': ("BEB A current", 'analog', "mA"),
+           'if_pwr_a': ("IF A power", 'analog', "dBm"),
+           'pd_current_b': ("PD B current", 'analog', "mA"),
+           'beb_current_b': ("BEB B current", 'analog', "mA"),
+           'if_pwr_b': ("IF A power", 'analog', "dBm"),
+           'lo_pwr': ("LO power", 'analog', "dBm"),
+           'beb_temp': ("BEB temp", 'analog', "°C"),
+          }
 
 class HwmcControlPanel:
-    '''Create an instance of a control panel.'''
+    """Create an instance of a control panel."""
     def __init__(self, config):
         """Create a control window and populate it with monitor point displays and controls.
 
@@ -72,7 +82,8 @@ class HwmcControlPanel:
         self.quit = False
         self.connected = False
         self.watch_id = None
-        self.mp_data = ''
+        self.ant_mp_data = ''
+        self.beb_mp_data = ''
         self.ant = ''
         self.ant_num = None
         self.etcd = None
@@ -91,17 +102,26 @@ class HwmcControlPanel:
         # Add a sub-frame for the controls, populated with the controls
         self._add_control_frame(main_frame, 1, 0)
 
-        # Add another sub-frame for the analog monitor points
-        self._add_analog_frame(main_frame, 1, 1)
+        # Add a sub-frame for the antenna and FEB
+        ant_feb_frame = self._add_ant_feb_frame(main_frame, 1, 1)
 
-        # And a frame for enumeration monitor points
-        self._add_enum_frame(main_frame, 2, 1)
+        # Add a sub-frame for the BEB
+        beb_frame = self._add_beb_frame(main_frame, 1, 2)
 
-        # The frame for the digital (boolean) data
-        self._add_dig_frame(main_frame, 2, 2)
+        # Add another sub-frame for the antenna/FEB analog monitor points
+        self._add_ant_analog_frame(ant_feb_frame, 1, 0)
 
-        #  A frame for antenna commands
-        self._add_cmd_frame(main_frame, 3, 0, 3)
+        # And a frame for the antenna/FEB enumeration monitor points
+        self._add_enum_frame(ant_feb_frame, 2, 0)
+
+        # The frame for the antenna/FEB digital (boolean) data
+        self._add_dig_frame(ant_feb_frame, 2, 1)
+
+        #  A frame for the antenna/FEB antenna commands
+        self._add_cmd_frame(ant_feb_frame, 3, 0, 3)
+
+        # Add another sub-frame for the BEB analog monitor points
+        self._add_beb_analog_frame(beb_frame, 1, 0)
 
         # And finally, the frame for displaying informational messages
         self._add_msg_frame(main_frame, 4, 0, 3)
@@ -111,13 +131,27 @@ class HwmcControlPanel:
         main_frame.grid(row=0)
         main_frame.rowconfigure(0, pad=ROW_PAD)
         label_main = tk.Label(main_frame, text=" Antenna Monitor Point Display ",
-                              font=('Arial', 14), fg='blue', bd=4, bg='white', relief=tk.RAISED)
+                              font=('Arial', 14), fg='blue', bd=4, bg='white')
         label_main.grid(row=0, column=0, columnspan=3)
         return main_frame
 
+    def _add_ant_feb_frame(self, main_frame, row, col):
+        ant_feb_frame = tk.Frame(main_frame, relief=tk.GROOVE, bd=4)
+        ant_feb_frame.grid(row=row, column=col, sticky=tk.NW + tk.SE, rowspan=2)
+        label_ant_feb = tk.Label(ant_feb_frame, text=" Antenna/FEB ", font=('Arial', 12))
+        label_ant_feb.grid(row=0, column=0, columnspan=2)
+        return ant_feb_frame
+
+    def _add_beb_frame(self, main_frame, row, col):
+        beb_frame = tk.Frame(main_frame, relief=tk.GROOVE, bd=4)
+        beb_frame.grid(row=row, column=col, sticky=tk.NW + tk.SE, rowspan=2)
+        label_ant_feb = tk.Label(beb_frame, text=" BEB ", font=('Arial', 12))
+        label_ant_feb.grid(row=0, column=0, columnspan=3)
+        return beb_frame
+
     def _add_control_frame(self, main_frame, row, col):
         control_frame = tk.Frame(main_frame, relief=tk.GROOVE, bd=4)
-        control_frame.grid(row=row, column=col, sticky=tk.NW + tk.SE, rowspan=2)
+        control_frame.grid(row=row, column=col, sticky=tk.NW + tk.SE, rowspan=1)
         control_frame.columnconfigure(0, minsize=50, pad=COL_PAD)
         control_frame.columnconfigure(1, pad=COL_PAD)
         control_frame.columnconfigure(2, pad=COL_PAD)
@@ -158,7 +192,7 @@ class HwmcControlPanel:
         self.msg_field = tk.Text(msg_frame, height=1, bg='white', fg='blue', font=('Courier', 8))
         self.msg_field.grid(row=0, column=0, sticky=tk.W + tk.E)
 
-    def _add_analog_frame(self, main_frame, row, col):
+    def _add_ant_analog_frame(self, main_frame, row, col):
         # Set up the frame for displaying analog values
         a_display_frame = tk.Frame(main_frame, relief=tk.GROOVE, bd=4)
         a_display_frame.grid(row=row, column=col, columnspan=2, sticky=tk.W)
@@ -166,7 +200,46 @@ class HwmcControlPanel:
         # Count analog monitor points
         a_cell_info = []
         analog_count = 0
-        for key, val in MPS.items():
+        for key, val in ANT_MPS.items():
+            mp_name, mp_type, mp_units = val
+            if mp_type == 'analog':
+                a_cell_info.append((key, mp_name, mp_units))
+                analog_count += 1
+
+        n_rows = int(math.sqrt(analog_count) + 0.9999)
+        n_cols = int(analog_count / n_rows + 0.9999)
+        # Add in fields for monitor points
+        a_title = tk.Label(a_display_frame, text="Analog Monitor Points")
+        a_title.grid(row=0, column=0, columnspan=2 * n_cols, sticky=tk.S)
+        a_labels = []
+        a_units = []
+        self.ant_a_fields = {}
+        i = 0
+        width = 14
+        for r in range(n_rows):
+            for c in range(n_cols):
+                if i < analog_count:
+                    current_cell_info = a_cell_info[i]
+                    a_labels.append(tk.Label(a_display_frame, text=current_cell_info[1]))
+                    a_labels[i].grid(row=2 * r + 1, column=2 * c, sticky=tk.S)
+                    self.ant_a_fields[current_cell_info[0]] = tk.Text(a_display_frame,
+                                                                  background='white', width=width,
+                                                                  height=1, bd=3)
+                    self.ant_a_fields[current_cell_info[0]].grid(row=2 * r + 2, column=2 * c,
+                                                             sticky=tk.N, pady=5)
+                    a_units.append(tk.Label(a_display_frame, text=current_cell_info[2]))
+                    a_units[i].grid(row=2 * r + 2, column=2 * c + 1, sticky=tk.W)
+                    i += 1
+
+    def _add_beb_analog_frame(self, main_frame, row, col):
+        # Set up the frame for displaying analog values
+        a_display_frame = tk.Frame(main_frame, relief=tk.GROOVE, bd=4)
+        a_display_frame.grid(row=row, column=col, columnspan=2, sticky=tk.W)
+
+        # Count analog monitor points
+        a_cell_info = []
+        analog_count = 0
+        for key, val in BEB_MPS.items():
             mp_name, mp_type, mp_units = val
             if mp_type == 'analog':
                 a_cell_info.append((key, mp_name, mp_units))
@@ -180,19 +253,19 @@ class HwmcControlPanel:
         a_title.grid(row=0, column=0, columnspan=2 * n_cols, sticky=tk.S)
         a_labels = []
         a_units = []
-        self.a_fields = {}
+        self.beb_a_fields = {}
         i = 0
-        width = 13
+        width = 14
         for r in range(n_rows):
             for c in range(n_cols):
                 if i < analog_count:
                     current_cell_info = a_cell_info[i]
                     a_labels.append(tk.Label(a_display_frame, text=current_cell_info[1]))
                     a_labels[i].grid(row=2 * r + 1, column=2 * c, sticky=tk.S)
-                    self.a_fields[current_cell_info[0]] = tk.Text(a_display_frame,
+                    self.beb_a_fields[current_cell_info[0]] = tk.Text(a_display_frame,
                                                                   background='white', width=width,
                                                                   height=1, bd=3)
-                    self.a_fields[current_cell_info[0]].grid(row=2 * r + 2, column=2 * c,
+                    self.beb_a_fields[current_cell_info[0]].grid(row=2 * r + 2, column=2 * c,
                                                              sticky=tk.N, pady=5)
                     a_units.append(tk.Label(a_display_frame, text=current_cell_info[2]))
                     a_units[i].grid(row=2 * r + 2, column=2 * c + 1, sticky=tk.W)
@@ -210,7 +283,7 @@ class HwmcControlPanel:
         e_cell_info = []
         self.e_enums = {}
         enum_count = 0
-        for key, val in MPS.items():
+        for key, val in ANT_MPS.items():
             mp_name, mp_type, enums = val
             if mp_type == 'enum':
                 e_cell_info.append((key, mp_name))
@@ -252,7 +325,7 @@ class HwmcControlPanel:
         # Count digital monitor points
         d_cell_info = []
         digital_count = 0
-        for key, val in MPS.items():
+        for key, val in ANT_MPS.items():
             mp_name, mp_type, _ = val
             if mp_type == 'dig':
                 d_cell_info.append((key, mp_name))
@@ -269,7 +342,7 @@ class HwmcControlPanel:
         labels = []
         self.d_fields = {}
         i = 0
-        width = 10
+        width = 8
         for r in range(n_rows):
             for c in range(n_cols):
                 if i < digital_count:
@@ -285,7 +358,7 @@ class HwmcControlPanel:
     def _add_cmd_frame(self, main_frame, row, col, span=1):
         # Set up the frame for the commands to the antennas
         cmd_frame = tk.Frame(main_frame, relief=tk.GROOVE, bd=4)
-        cmd_frame.grid(row=row, column=col, columnspan=span, sticky=tk.NW)
+        cmd_frame.grid(row=row, column=col, columnspan=span, sticky=tk.NW+tk.SE)
         cmd_frame.rowconfigure(0, pad=20)
         label_cmd = tk.Label(cmd_frame, text="Antenna/Frontend Controls")
         label_cmd.grid(row=0, column=0, columnspan=9, sticky=tk.W + tk.E)
@@ -333,13 +406,13 @@ class HwmcControlPanel:
 
     def update(self):
         """Update monitor point values on the control panel if there are new values available."""
-        if self.mp_data:
-            for mp in self.mp_data:
-                val = self.mp_data[mp]
-                if mp in self.a_fields:
+        if self.ant_mp_data:
+            for mp in self.ant_mp_data:
+                val = self.ant_mp_data[mp]
+                if mp in self.ant_a_fields:
                     val = "{:.3f}".format(val)
-                    self.a_fields[mp].delete(1.0, tk.END)
-                    self.a_fields[mp].insert(tk.END, val)
+                    self.ant_a_fields[mp].delete(1.0, tk.END)
+                    self.ant_a_fields[mp].insert(tk.END, val)
                 elif mp in self.e_fields:
                     self.e_fields[mp].delete(1.0, tk.END)
                     self.e_fields[mp].insert(tk.END, self.e_enums[mp][int(val)])
@@ -348,9 +421,18 @@ class HwmcControlPanel:
                         self.d_fields[mp].deselect()
                     else:
                         self.d_fields[mp].select()
+
+        if self.beb_mp_data:
+            for mp in self.beb_mp_data:
+                val = self.beb_mp_data[mp]
+                if mp in self.beb_a_fields:
+                    val = "{:.3f}".format(val)
+                    self.beb_a_fields[mp].delete(1.0, tk.END)
+                    self.beb_a_fields[mp].insert(tk.END, val)
+
         self.root.update()
 
-    def mp_callback(self, event):
+    def ant_mp_callback(self, event):
         """Etcd watch callback function is called when values of watched monitor key is updated.
 
         When the monitor key is updated this function reads the new key values and converts them to
@@ -359,19 +441,39 @@ class HwmcControlPanel:
         Args:
             event (:obj:): Etcd event containing the key and value.
         """
-        value = event.events[0].value.decode('utf-8')
-        self.mp_data = json.loads(value)
+        try:
+            value = event.events[0].value.decode('utf-8')
+        except ValueError:
+            self.ant_mp_data = {}
+        self.ant_mp_data = json.loads(value)
+
+    def beb_mp_callback(self, event):
+        """Etcd watch callback function is called when values of watched monitor key is updated.
+
+        When the monitor key is updated this function reads the new key values and converts them to
+        a Python dictionary from a JSON formatted string.
+
+        Args:
+            event (:obj:): Etcd event containing the key and value.
+        """
+        try:
+            value = event.events[0].value.decode('utf-8')
+        except ValueError:
+            self.beb_mp_data = {}
+        self.beb_mp_data = json.loads(value)
 
     def _open_connection(self, ant_num):
         if self.connected:
             self.etcd.cancel_watch(self.watch_id)
             self.ant_num = None
             self.connected = False
-        self.etcd_mon_key = '/mon/ant/{0:d}'.format(ant_num)
+        self.etcd_ant_key = '/mon/ant/{0:d}'.format(ant_num)
+        self.etcd_beb_key = '/mon/beb/{0:d}'.format(ant_num)
         self.etcd_cmd_key = '/cmd/ant/{0:d}'.format(ant_num)
         try:
             self.etcd = etcd.client(host=self.etcd_endpoint[0], port=self.etcd_endpoint[1])
-            self.etcd.add_watch_callback(self.etcd_mon_key, self.mp_callback)
+            self.etcd.add_watch_callback(self.etcd_ant_key, self.ant_mp_callback)
+            self.etcd.add_watch_callback(self.etcd_beb_key, self.beb_mp_callback)
             self.ant_num = ant_num
             self.connected = True
         except NameError:
@@ -437,7 +539,7 @@ class HwmcControlPanel:
 
     def etcd_send(self, cmd, val):
         """Pack the specified command and value into a JSON packet and sendit through etcd."""
-        j_pkt = json.dumps({'cmd': cmd, 'val': val})
+        j_pkt = json.dump({'cmd': cmd, 'val': val})
         self.etcd.put(self.etcd_cmd_key, j_pkt)
 
 

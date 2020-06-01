@@ -79,7 +79,7 @@ HARDWARE_MC = hwmc.Hwmc(hwmc_config)
 HARDWARE_MC.run()
 stop_proc = False
 while stop_proc is False:
-    resp = input("Press 's<Enter>' to stop: ")
+    resp = input("Press 's' to stop: ")
     if resp.lower() == 's':
         HARDWARE_MC.stop()
         sleep(5)
