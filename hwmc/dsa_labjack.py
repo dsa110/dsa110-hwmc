@@ -684,22 +684,20 @@ class DsaBebLabJack:
                 self.monitor_points[i]['time'] = float(time_stamp)
                 self.monitor_points[i]['pd_current_a'] = analog_vals[j]
                 j += 1
-                self.monitor_points[i]['beb_current_a'] = analog_vals[j]
-                j += 1
-                self.monitor_points[i]['if_pwr_a'] = analog_vals[j]
-                j += 1
                 self.monitor_points[i]['pd_current_b'] = analog_vals[j]
                 j += 1
-                self.monitor_points[i]['beb_current_b'] = analog_vals[j]
+                self.monitor_points[i]['if_pwr_a'] = analog_vals[j] / 35.0 - 90.0
                 j += 1
-                self.monitor_points[i]['if_pwr_b'] = analog_vals[j]
+                self.monitor_points[i]['if_pwr_b'] = analog_vals[j] / 35.0 - 90.0
                 j += 1
-                self.monitor_points[i]['lo_pwr'] = analog_vals[j]
+                self.monitor_points[i]['lo_pwr'] = analog_vals[j] / 35.0 - 90.0
                 j += 1
-                self.monitor_points[i]['beb_temp'] = analog_vals[j]
+                self.monitor_points[i]['beb_current_a'] = 100.0 * analog_vals[j]
                 j += 1
-                print(i)
-                print(self.monitor_points[i*self.BEB_PER_LJ:(i+1)*self.BEB_PER_LJ])
+                self.monitor_points[i]['beb_current_b'] = 100.0 * analog_vals[j]
+                j += 1
+                self.monitor_points[i]['beb_temp'] = 100.0 * analog_vals[j] - 50
+                j += 1
         return self.monitor_points
 
     def send_to_etcd(self, key, mon_data):

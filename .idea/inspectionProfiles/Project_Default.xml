@@ -27,6 +27,7 @@
       <option name="ignoredIdentifiers">
         <list>
           <option value="time.now" />
+          <option value="get_yaml_config" />
         </list>
       </option>
     </inspection_tool>

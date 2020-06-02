@@ -16,6 +16,7 @@ import tkinter as tk
 
 import etcd3 as etcd
 import get_yaml_config
+yaml_fn = "yaml.file"
 
 ROW_PAD = 20
 COL_PAD = 30
@@ -54,19 +55,21 @@ ANT_MPS = {'time': ("MJD", 'analog', "day"),
            'emergency_off': ("Emergency off", 'dig', None),
            }
 
-BEB_MPS = {'time':  ("MJD", 'analog', "day"),
+BEB_MPS = {'time': ("MJD", 'analog', "day"),
            'pd_current_a': ("PD A current", 'analog', "mA"),
            'beb_current_a': ("BEB A current", 'analog', "mA"),
            'if_pwr_a': ("IF A power", 'analog', "dBm"),
            'pd_current_b': ("PD B current", 'analog', "mA"),
            'beb_current_b': ("BEB B current", 'analog', "mA"),
-           'if_pwr_b': ("IF A power", 'analog', "dBm"),
+           'if_pwr_b': ("IF B power", 'analog', "dBm"),
            'lo_pwr': ("LO power", 'analog', "dBm"),
            'beb_temp': ("BEB temp", 'analog', "°C"),
-          }
+           }
+
 
 class HwmcControlPanel:
     """Create an instance of a control panel."""
+
     def __init__(self, config):
         """Create a control window and populate it with monitor point displays and controls.
 
@@ -223,10 +226,11 @@ class HwmcControlPanel:
                     a_labels.append(tk.Label(a_display_frame, text=current_cell_info[1]))
                     a_labels[i].grid(row=2 * r + 1, column=2 * c, sticky=tk.S)
                     self.ant_a_fields[current_cell_info[0]] = tk.Text(a_display_frame,
-                                                                  background='white', width=width,
-                                                                  height=1, bd=3)
+                                                                      background='white',
+                                                                      width=width,
+                                                                      height=1, bd=3)
                     self.ant_a_fields[current_cell_info[0]].grid(row=2 * r + 2, column=2 * c,
-                                                             sticky=tk.N, pady=5)
+                                                                 sticky=tk.N, pady=5)
                     a_units.append(tk.Label(a_display_frame, text=current_cell_info[2]))
                     a_units[i].grid(row=2 * r + 2, column=2 * c + 1, sticky=tk.W)
                     i += 1
@@ -263,10 +267,11 @@ class HwmcControlPanel:
                     a_labels.append(tk.Label(a_display_frame, text=current_cell_info[1]))
                     a_labels[i].grid(row=2 * r + 1, column=2 * c, sticky=tk.S)
                     self.beb_a_fields[current_cell_info[0]] = tk.Text(a_display_frame,
-                                                                  background='white', width=width,
-                                                                  height=1, bd=3)
+                                                                      background='white',
+                                                                      width=width,
+                                                                      height=1, bd=3)
                     self.beb_a_fields[current_cell_info[0]].grid(row=2 * r + 2, column=2 * c,
-                                                             sticky=tk.N, pady=5)
+                                                                 sticky=tk.N, pady=5)
                     a_units.append(tk.Label(a_display_frame, text=current_cell_info[2]))
                     a_units[i].grid(row=2 * r + 2, column=2 * c + 1, sticky=tk.W)
                     i += 1
@@ -352,13 +357,13 @@ class HwmcControlPanel:
                     self.d_fields[current_cell_info[0]] = tk.Checkbutton(d_display_frame,
                                                                          width=width, height=1,
                                                                          bd=3)
-                    self.d_fields[current_cell_info[0]].grid(row=2*r+2, column=c, sticky=tk.N)
+                    self.d_fields[current_cell_info[0]].grid(row=2 * r + 2, column=c, sticky=tk.N)
                     i += 1
 
     def _add_cmd_frame(self, main_frame, row, col, span=1):
         # Set up the frame for the commands to the antennas
         cmd_frame = tk.Frame(main_frame, relief=tk.GROOVE, bd=4)
-        cmd_frame.grid(row=row, column=col, columnspan=span, sticky=tk.NW+tk.SE)
+        cmd_frame.grid(row=row, column=col, columnspan=span, sticky=tk.NW + tk.SE)
         cmd_frame.rowconfigure(0, pad=20)
         label_cmd = tk.Label(cmd_frame, text="Antenna/Frontend Controls")
         label_cmd.grid(row=0, column=0, columnspan=9, sticky=tk.W + tk.E)
@@ -408,16 +413,16 @@ class HwmcControlPanel:
         """Update monitor point values on the control panel if there are new values available."""
         if self.ant_mp_data:
             for mp in self.ant_mp_data:
-                val = self.ant_mp_data[mp]
+                mp_val = self.ant_mp_data[mp]
                 if mp in self.ant_a_fields:
-                    val = "{:.3f}".format(val)
+                    mp_val = "{:.3f}".format(mp_val)
                     self.ant_a_fields[mp].delete(1.0, tk.END)
-                    self.ant_a_fields[mp].insert(tk.END, val)
+                    self.ant_a_fields[mp].insert(tk.END, mp_val)
                 elif mp in self.e_fields:
                     self.e_fields[mp].delete(1.0, tk.END)
-                    self.e_fields[mp].insert(tk.END, self.e_enums[mp][int(val)])
+                    self.e_fields[mp].insert(tk.END, self.e_enums[mp][int(mp_val)])
                 elif mp in self.d_fields:
-                    if val is False:
+                    if mp_val is False:
                         self.d_fields[mp].deselect()
                     else:
                         self.d_fields[mp].select()
@@ -426,7 +431,7 @@ class HwmcControlPanel:
             for mp in self.beb_mp_data:
                 val = self.beb_mp_data[mp]
                 if mp in self.beb_a_fields:
-                    val = "{:.3f}".format(val)
+                    mp_val = "{:.3f}".format(mp_val)
                     self.beb_a_fields[mp].delete(1.0, tk.END)
                     self.beb_a_fields[mp].insert(tk.END, val)
 
@@ -539,22 +544,23 @@ class HwmcControlPanel:
 
     def etcd_send(self, cmd, val):
         """Pack the specified command and value into a JSON packet and sendit through etcd."""
-        j_pkt = json.dump({'cmd': cmd, 'val': val})
+        j_pkt = json.dumps({'cmd': cmd, 'val': val})
         self.etcd.put(self.etcd_cmd_key, j_pkt)
 
 
 if __name__ == '__main__':
     cpl_config = {'etcd_endpoint': '192.168.1.132:2379'
-                 }
+                  }
 
     parser = argparse.ArgumentParser(description="Run the DSA-110 hardware monitor and control"
                                                  "panel")
     parser.add_argument('-c', '--config-file', metavar='CONFIG_FILE_NAME', type=str, required=False,
                         help="Fully qualified name of YAML configuration file. "
-                        "If used, other arguments are ignored, except for '-s', '--s'")
+                             "If used, other arguments are ignored, except for '-s', '--s'")
     parser.add_argument('-i', '--etcd_ip', metavar='ETCD_IP', type=str, required=False,
                         default=cpl_config['etcd_endpoint'], help="Etcd server IP address and port."
-                        " Default: {}".format(cpl_config['etcd_endpoint']))
+                                                                  " Default: {}".format(
+            cpl_config['etcd_endpoint']))
 
     args = parser.parse_args()
     if args.config_file is not None:
