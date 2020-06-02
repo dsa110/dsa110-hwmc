@@ -16,7 +16,6 @@ import tkinter as tk
 
 import etcd3 as etcd
 import get_yaml_config
-yaml_fn = "yaml.file"
 
 ROW_PAD = 20
 COL_PAD = 30
@@ -446,6 +445,7 @@ class HwmcControlPanel:
         Args:
             event (:obj:): Etcd event containing the key and value.
         """
+        value = {}
         try:
             value = event.events[0].value.decode('utf-8')
         except ValueError:
@@ -461,6 +461,7 @@ class HwmcControlPanel:
         Args:
             event (:obj:): Etcd event containing the key and value.
         """
+        value = {}
         try:
             value = event.events[0].value.decode('utf-8')
         except ValueError:
