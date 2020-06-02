@@ -8,6 +8,8 @@ setup(
     version=get_git_version(),
     packages=['hwmc'],
     url='https://github.com/dsa110',
+#    requirements=['labjack-ljm'],
+    entry_points={'console_scripts': ['control_panel = hwmc.control_panel:main']},
     license='California Institute of Technology',
     author='James W Lamb',
     author_email='lamb@caltech.edu',
