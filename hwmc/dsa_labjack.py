@@ -145,8 +145,7 @@ class DiscoverT7:
         """
         try:
             self.num_found, a_device_types, a_connection_types, a_serial_numbers, _ = \
-                ljm.listAll(ljm.constants.dtT7, ljm.constants.ctUSB)
-#                ljm.listAll(ljm.constants.dtT7, ljm.constants.ctTCP)
+                ljm.listAll(ljm.constants.dtT7, ljm.constants.ctTCP)
 
         except ljm.LJMError as err:
             # Get class for logging.
