@@ -33,7 +33,6 @@ class LuaScriptUtilities:
 
         # Set up logging
         self.logger = logging.getLogger(Conf.LOGGER + '.' + __name__)
-        self.logger.setLevel(logging.DEBUG)
 
         # Get class for logging.
         CustomFormatter.log_msg_fmt['class'] = self.class_name

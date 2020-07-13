@@ -38,7 +38,9 @@ import hwmc.lua_script_utilities as lua
 from hwmc import lj_startup as sf
 from hwmc.hwmc_logging import CustomFormatter
 from hwmc.hwmc_logging import LogConf as Conf
+from hwmc.write_config import *
 
+ABSOLUTE_ZERO = 273.15
 
 # -------------- LabJack T7 initialization class ------------------
 class DiscoverT7:
@@ -145,7 +147,7 @@ class DiscoverT7:
         """
         try:
             self.num_found, a_device_types, a_connection_types, a_serial_numbers, _ = \
-                ljm.listAll(ljm.constants.dtT7, ljm.constants.ctTCP)
+                ljm.listAll(ljm.constants.dtT7, ljm.constants.ctUSB)
 
         except ljm.LJMError as err:
             # Get class for logging.
@@ -220,7 +222,6 @@ class DsaAntLabJack:
     A_NUM_VALS = (14, 1, 1, 4, 2)
     LEN_VALS = sum(A_NUM_VALS)
 
-    ABSOLUTE_ZERO = 273.15
     DRIVE_STATE = {0: ' Off', 1: 'North', 2: 'South', 3: ' Bad'}
     BRAKE_STATE = {0: ' On', 1: 'Off'}
     LIMIT_STATE = {0: ' On', 1: 'Off'}
@@ -249,17 +250,16 @@ class DsaAntLabJack:
 
         # Set up logging.
         self.logger = logging.getLogger(Conf.LOGGER + '.' + __name__)
-        self.logger.setLevel(logging.DEBUG)
 
         # Set class name for logging.
         CustomFormatter.log_msg_fmt['class'] = self.class_name
         self.logger.info("Initializing")
         self.logger.info("Antenna {} connected".format(self.ant_num))
 
-        self.etcd_mon_key = '/mon/ant/{0:d}'.format(ant_num)
-        self.etcd_cmd_key = '/cmd/ant/{0:d}'.format(ant_num)
-        self.etcd_cnf_key = '/cnf/beb/{0:d}'.format(ant_num)
-        self.etcd_cmd_all_key = '/cmd/ant/0'
+        self.etcd_mon_key = '/jwl/mon/ant/{0:d}'.format(ant_num)
+        self.etcd_cmd_key = '/jwl/cmd/ant/{0:d}'.format(ant_num)
+        self.etcd_cal_key = '/jwl/cal/ant/{0:d}'.format(ant_num)
+        self.etcd_cmd_all_key = '/jwl/cmd/ant/0'
         self.etcd_client = etcd.client(host=etcd_endpoint[0], port=etcd_endpoint[1])
         try:
             self.etcd_client.add_watch_callback(self.etcd_cmd_key, self.cmd_callback)
@@ -275,6 +275,7 @@ class DsaAntLabJack:
                                'ant_el': 0.0,
                                'ant_cmd_el': 0.0,
                                'ant_el_err': 0.0,
+                               'ant_el_raw': 0.0,
                                'drv_cmd': 0,
                                'drv_act': 0,
                                'drv_state': 0,
@@ -344,11 +345,28 @@ class DsaAntLabJack:
         # Query LabJack for its current configuration.
         startup_mp = sf.t7_startup_check(self.lj_handle, True)
 
+        # Check for inclinometer calibration constants.
+        self._check_cal()
+
         return startup_mp
 
     def __del__(self):
         if self.valid is True:
             ljm.close(self.lj_handle)
+
+    def _check_cal(self):
+        # Get class for logging.
+        CustomFormatter.log_msg_fmt['class'] = self.class_name
+        if self.etcd_valid:
+            val = self.etcd_client.get(self.etcd_cal_key)
+            if val[0] is not None:
+                j_pkt = val[0].decode('utf-8')
+                cal_info = json.loads(j_pkt)
+                cal_table = cal_info['cal_table']
+                write_config_to_flash(self.lj_handle, cal_table)
+            else:
+                self.logger.error("Unable to get inclinometer cal for ant-{} thread".
+                                  format(self.ant_num))
 
     def load_script(self, script_name):
         """Load a specified Lua script into the LabJack
@@ -406,8 +424,8 @@ class DsaAntLabJack:
         self.monitor_points['feb_current_b'] = 0.1000 * a_values[10]
         self.monitor_points['feb_temp_b'] = 100 * a_values[11] - 50
         self.monitor_points['psu_volt'] = a_values[12]
-        self.monitor_points['spare'] = a_values[13]
-        self.monitor_points['lj_temp'] = a_values[14] - self.ABSOLUTE_ZERO
+        self.monitor_points['ant_el_raw'] = a_values[13]
+        self.monitor_points['lj_temp'] = a_values[14] - ABSOLUTE_ZERO
         dig_val = int(a_values[15])
         self.monitor_points['emergency_off'] = bool((dig_val >> 8) & 0b01)
         self.monitor_points['drv_cmd'] = (dig_val >> 9) & 0b11
@@ -467,7 +485,6 @@ class DsaAntLabJack:
 
         # Set up logging
         self.logger = logging.getLogger(Conf.LOGGER + '.' + __name__)
-        self.logger.setLevel(logging.DEBUG)
 
         # Get class for logging.
         CustomFormatter.log_msg_fmt['class'] = self.class_name
@@ -482,9 +499,9 @@ class DsaAntLabJack:
             sleep_time = next_time - time.time()
             if sleep_time > 0.0:
                 time.sleep(sleep_time)
-
         CustomFormatter.log_msg_fmt['class'] = self.class_name
         self.logger.info("Antenna {} disconnecting".format(self.ant_num))
+        self.etcd_client.close()
 
     def switch_noise_a(self, state):
         """Turn noise source A on or off"""
@@ -497,7 +514,7 @@ class DsaAntLabJack:
         self.switch_noise(pol, state)
 
     def switch_noise(self, pol, state):
-        """Set he bit in the LJ T7 to turn the specified noise source on or off.
+        """Set the bit in the LJ T7 to turn the specified noise source on or off.
 
         Args:
             pol (str): 'a' or 'b' according to the requested polarization.
@@ -610,8 +627,8 @@ class DsaBebLabJack:
         self.beb_num = beb_num
         self.etcd_valid = False
         for i in range(self.BEB_PER_LJ):
-            self.etcd_mon_key.append('/mon/beb/{0:d}'.format(beb_num + i))
-            self.etcd_cnf_key.append('/cnf/beb/{0:d}'.format(beb_num + i))
+            self.etcd_mon_key.append('/jwl/mon/beb/{0:d}'.format(beb_num + i))
+            self.etcd_cnf_key.append('/jwl/cnf/beb/{0:d}'.format(beb_num + i))
         self.etcd_client = etcd.client(host=etcd_endpoint[0], port=etcd_endpoint[1])
         try:
             self.etcd_client.status()
@@ -635,16 +652,17 @@ class DsaBebLabJack:
                  'if_pwr_b': 0.0,
                  'lo_pwr': 0.0,
                  'beb_temp': 0.0,
+                 'psu_voltage': 0.0,
+                 'psu_current': 0.0,
                  }
             )
         # Initialize LabJack settings
         self.valid = True
         startup_mps = self._init_beb_labjack()
-        self.send_to_etcd(self.etcd_cnf_key[0], startup_mps)
+        self.send_to_etcd(self.etcd_mon_key[0], startup_mps)
 
         # Set up logging
         self.logger = logging.getLogger(Conf.LOGGER + '.' + __name__)
-        self.logger.setLevel(logging.DEBUG)
 
         # Get class for logging.
         CustomFormatter.log_msg_fmt['class'] = self.class_name
@@ -667,6 +685,7 @@ class DsaBebLabJack:
         if self.valid is True:
             ljm.close(self.lj_handle)
 
+    @property
     def _get_data(self):
         """Read data from LJ T7 and insert into monitor point dictionary.
 
@@ -675,6 +694,8 @@ class DsaBebLabJack:
         one-second cadence monitor point dictionaries for each of the connected antennas.
         """
         if self.valid is True:
+            psu_vals = ljm.eReadNameArray(self.lj_handle, "AIN0", 2)
+            beb_temp = ljm.eReadName(self.lj_handle, "TEMPERATURE_DEVICE_K")
             analog_vals = ljm.eReadNameArray(self.lj_handle, "AIN48", 80)
             time_stamp = float("{:.8f}".format(Time.now().mjd))
             j = 0
@@ -685,18 +706,19 @@ class DsaBebLabJack:
                 j += 1
                 self.monitor_points[i]['pd_current_b'] = analog_vals[j]
                 j += 1
-                self.monitor_points[i]['if_pwr_a'] = analog_vals[j] / 35.0 - 90.0
+                self.monitor_points[i]['if_pwr_a'] = 1000 * analog_vals[j] / 35.0 - 90.0
                 j += 1
-                self.monitor_points[i]['if_pwr_b'] = analog_vals[j] / 35.0 - 90.0
+                self.monitor_points[i]['if_pwr_b'] = 1000 * analog_vals[j] / 35.0 - 90.0
                 j += 1
-                self.monitor_points[i]['lo_pwr'] = analog_vals[j] / 35.0 - 90.0
+                self.monitor_points[i]['lo_mon'] = 1000 * analog_vals[j]
                 j += 1
-                self.monitor_points[i]['beb_current_a'] = 100.0 * analog_vals[j]
+                self.monitor_points[i]['beb_current_a'] = 100.0 * psu_vals[0]
                 j += 1
-                self.monitor_points[i]['beb_current_b'] = 100.0 * analog_vals[j]
+                self.monitor_points[i]['beb_current_b'] = 100.0 * psu_vals[1]
                 j += 1
-                self.monitor_points[i]['beb_temp'] = 100.0 * analog_vals[j] - 50
-                j += 1
+                self.monitor_points[i]['psu_voltage'] = psu_vals[0]
+                self.monitor_points[i]['psu_current'] = psu_vals[1]
+                self.monitor_points[i]['beb_temp'] = beb_temp - ABSOLUTE_ZERO
         return self.monitor_points
 
     def send_to_etcd(self, key, mon_data):
@@ -712,14 +734,13 @@ class DsaBebLabJack:
 
         # Set up logging
         self.logger = logging.getLogger(Conf.LOGGER + '.' + __name__)
-        self.logger.setLevel(logging.DEBUG)
 
         # Get class for logging.
         CustomFormatter.log_msg_fmt['class'] = self.class_name
         self.logger.debug("Running BEB {} thread".format(self.beb_num))
         # Run data query loop until stop flag set
         while not self.stop:
-            mon_data = self._get_data()
+            mon_data = self._get_data
             for i in range(len(mon_data)):
                 self.send_to_etcd(self.etcd_mon_key[i], mon_data[i])
             t_now = time.time()
@@ -730,6 +751,7 @@ class DsaBebLabJack:
 
         CustomFormatter.log_msg_fmt['class'] = self.class_name
         self.logger.info("BEB {} disconnecting".format(self.beb_num))
+        self.etcd_client.close()
 
     def stop_thread(self):
         """Sets a flag to stop the thread this instance is run in"""

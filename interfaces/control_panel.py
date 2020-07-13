@@ -24,6 +24,7 @@ COL_PAD = 30
 # control system.
 ANT_MPS = {'time': ("MJD", 'analog', "day"),
            'ant_el': ("Elevation", 'analog', "°"),
+           'ant_el_raw': ("Raw el", 'analog', "V"),
            'ant_cmd_el': ("El target", 'analog', "°"),
            'ant_el_err': ("El error", 'analog', "°"),
            'motor_temp': ("Motor temp", 'analog', "°C"),
@@ -61,7 +62,7 @@ BEB_MPS = {'time': ("MJD", 'analog', "day"),
            'pd_current_b': ("PD B current", 'analog', "mA"),
            'beb_current_b': ("BEB B current", 'analog', "mA"),
            'if_pwr_b': ("IF B power", 'analog', "dBm"),
-           'lo_pwr': ("LO power", 'analog', "dBm"),
+           'lo_mon': ("LO monitor", 'analog', "V"),
            'beb_temp': ("BEB temp", 'analog', "°C"),
            }
 
@@ -428,11 +429,11 @@ class HwmcControlPanel:
 
         if self.beb_mp_data:
             for mp in self.beb_mp_data:
-                val = self.beb_mp_data[mp]
+                mp_val = self.beb_mp_data[mp]
                 if mp in self.beb_a_fields:
                     mp_val = "{:.3f}".format(mp_val)
                     self.beb_a_fields[mp].delete(1.0, tk.END)
-                    self.beb_a_fields[mp].insert(tk.END, val)
+                    self.beb_a_fields[mp].insert(tk.END, mp_val)
 
         self.root.update()
 
@@ -473,9 +474,9 @@ class HwmcControlPanel:
             self.etcd.cancel_watch(self.watch_id)
             self.ant_num = None
             self.connected = False
-        self.etcd_ant_key = '/mon/ant/{0:d}'.format(ant_num)
-        self.etcd_beb_key = '/mon/beb/{0:d}'.format(ant_num)
-        self.etcd_cmd_key = '/cmd/ant/{0:d}'.format(ant_num)
+        self.etcd_ant_key = '/jwl/mon/ant/{0:d}'.format(ant_num)
+        self.etcd_beb_key = '/jwl/mon/beb/{0:d}'.format(ant_num)
+        self.etcd_cmd_key = '/jwl/cmd/ant/{0:d}'.format(ant_num)
         try:
             self.etcd = etcd.client(host=self.etcd_endpoint[0], port=self.etcd_endpoint[1])
             self.etcd.add_watch_callback(self.etcd_ant_key, self.ant_mp_callback)

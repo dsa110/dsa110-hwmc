@@ -12,7 +12,7 @@ from logging.handlers import SysLogHandler as Syslog
 from time import sleep
 
 from hwmc import hwmc
-from get_yaml_config import read_yaml
+from hwmc.get_yaml_config import read_yaml
 
 # Mapping of priority values for arguments to this script to Syslog constants
 log_priorities = {0: Syslog.LOG_EMERG,
@@ -43,7 +43,7 @@ parser = argparse.ArgumentParser(description="Run the DSA-110 hardware monitor a
 parser.add_argument('-c', '--config-file', metavar='CONFIG_FILE_NAME', type=str, required=False,
                     help="Fully qualified name of YAML configuration file. "
                     "If used, other arguments are ignored, except for '-s', '--s'")
-parser.add_argument('-i', '--etcd_ip', metavar='ETCD_IP', type=str, required=False,
+parser.add_argument('-i', '--etcd-ip', metavar='ETCD_IP', type=str, required=False,
                     default=hwmc_config['etcd_endpoint'],
                     help="Etcd server IP address and port."
                     " Default: {}".format(hwmc_config['etcd_endpoint']))
@@ -53,7 +53,7 @@ parser.add_argument('-lf', '--log-file', metavar='LOG_FILE', type=str, required=
                     default=hwmc_config['log_file'],
                     help='Base name for rotating log file')
 parser.add_argument('-s', '--sim', default=False, action='store_true', required=False,
-                    help="Run in simulation mode which does not communicate with real"
+                    help="Run in simulation mode, which does not communicate with real"
                     "antenna monitor hardware")
 
 args = parser.parse_args()

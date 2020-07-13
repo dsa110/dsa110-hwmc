@@ -10,6 +10,8 @@
   <component name="PackageRequirementsSettings">
     <option name="requirementsPath" value="REQUIREMENTS.txt" />
     <option name="versionSpecifier" value="Greater or equal (&gt;=x.y.z)" />
+    <option name="removeUnused" value="true" />
+    <option name="modifyBaseFiles" value="true" />
   </component>
   <component name="PyDocumentationSettings">
     <option name="format" value="GOOGLE" />
