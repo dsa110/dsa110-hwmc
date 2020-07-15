@@ -34,13 +34,14 @@ import etcd3 as etcd
 from astropy.time import Time
 from labjack import ljm
 
+import hwmc.common
 import hwmc.lua_script_utilities as lua
+import dsautils.dsa_syslog as dsl
 from hwmc import lj_startup as sf
-from hwmc.hwmc_logging import CustomFormatter
-from hwmc.hwmc_logging import LogConf as Conf
 from hwmc.write_config import *
 
-ABSOLUTE_ZERO = 273.15
+ABSOLUTE_ZERO = -273.15
+
 
 # -------------- LabJack T7 initialization class ------------------
 class DiscoverT7:
@@ -73,10 +74,9 @@ class DiscoverT7:
         self.class_name = (my_class[my_class.find('.') + 1: my_class.find("'>'") - 1])
 
         # Set up logging.
-        self.logger = logging.getLogger(Conf.LOGGER + '.' + __name__)
-
-        # Set class name for logging.
-        CustomFormatter.log_msg_fmt['class'] = self.class_name
+        self.logger = dsl.DsaSyslogger(Conf.LOG_SUBSYST, logging.INFO)
+        self.logger.app(self.class_name)
+        self.logger.function(__name__)
         self.logger.info("Searching for LabJack T7's")
 
         # Set up arrays to hold device information for discovered LabJack devices.
@@ -425,7 +425,7 @@ class DsaAntLabJack:
         self.monitor_points['feb_temp_b'] = 100 * a_values[11] - 50
         self.monitor_points['psu_volt'] = a_values[12]
         self.monitor_points['ant_el_raw'] = a_values[13]
-        self.monitor_points['lj_temp'] = a_values[14] - ABSOLUTE_ZERO
+        self.monitor_points['lj_temp'] = a_values[14] + ABSOLUTE_ZERO
         dig_val = int(a_values[15])
         self.monitor_points['emergency_off'] = bool((dig_val >> 8) & 0b01)
         self.monitor_points['drv_cmd'] = (dig_val >> 9) & 0b11
@@ -718,11 +718,11 @@ class DsaBebLabJack:
                 j += 1
                 self.monitor_points[i]['psu_voltage'] = psu_vals[0]
                 self.monitor_points[i]['psu_current'] = psu_vals[1]
-                self.monitor_points[i]['beb_temp'] = beb_temp - ABSOLUTE_ZERO
+                self.monitor_points[i]['beb_temp'] = beb_temp + ABSOLUTE_ZERO
         return self.monitor_points
 
     def send_to_etcd(self, key, mon_data):
-        """Convert a monitor point dictionary to JSON and send to etdc key/value store."""
+        """Convert a monitor point dictionary to JSON and send to etcd key/value store."""
         if self.etcd_valid:
             j_pkt = json.dumps(mon_data)
             self.etcd_client.put(key, j_pkt)

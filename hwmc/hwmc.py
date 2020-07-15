@@ -11,16 +11,14 @@ are via an etcd key/value store.
 """
 
 import logging
-import logging.handlers
 
 import threading
 import time
 from threading import Thread
-import platform
 
 from hwmc import dsa_labjack as dlj
-from hwmc.hwmc_logging import CustomFormatter
 from hwmc.hwmc_logging import LogConf as Conf
+import dsautils.dsa_syslog as dsl
 
 
 class Hwmc:
@@ -58,23 +56,10 @@ class Hwmc:
         if self.sim is True:
             print("==================\n Simulation mode!\n==================\n")
 
-        # Set up logging. Loggers in other modules should be children of this.
-        logger = logging.getLogger(Conf.LOGGER)
-
-        # Create the handler appropriate for the OS
-        if platform.system() == 'Windows':
-            file_handler = logging.handlers.TimedRotatingFileHandler(self.log_file, when='midnight')
-            # Create formatter and add it to the handlers.
-            file_handler.setFormatter(CustomFormatter())
-            logger.addHandler(file_handler)
-        else:
-            syslog_handler = logging.handlers.SysLogHandler()
-            logger.addHandler(syslog_handler)
-            CustomFormatter.log_msg_fmt['class'] = self.my_class
-        logger.setLevel(1)
+        # Set up logging.
+        logger = dsl.DsaSyslogger(Conf.LOG_SUBSYST, logging.INFO)
         logger.info("Main logger created")
         logger.info("Logging level set to {}".format(self.log_priority))
-        logger.setLevel(self.log_priority)
 
         # Discover LabJack T7 devices on the network
         devices = dlj.DiscoverT7(sim=self.sim, etcd_endpoint=self.etcd_endpoint)

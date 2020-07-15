@@ -33,7 +33,7 @@ class CustomFormatter(logging.Formatter):
                                            ('func_name', '%(funcName)s'),
                                            ('thread', '%(threadName)s'),
                                            ('msg', '%(message)s'),
-                                           ]
+                                           ],
                                           )
 
     def format(self, record):
