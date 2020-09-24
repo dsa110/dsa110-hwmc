@@ -1,6 +1,7 @@
 """LabJack T7 start_up _check"""
 
 import time
+
 from labjack import ljm
 
 
@@ -25,10 +26,10 @@ def t7_startup_check(lj_handle, lua_required):
     # Read relevant device information and configuration registers.
     start_up_state['factory'] = bool(ljm.eReadName(lj_handle, 'IO_CONFIG_CHECK_FOR_FACTORY'))
     start_up_state['prod_id'] = int(ljm.eReadName(lj_handle, 'PRODUCT_ID'))
-    start_up_state['hw_ver'] = format(float(ljm.eReadName(lj_handle, 'HARDWARE_VERSION')), '.3f')
-    start_up_state['fw_ver'] = format(float(ljm.eReadName(lj_handle, 'FIRMWARE_VERSION')), '.3f')
-    start_up_state['boot_ver'] = format(float(ljm.eReadName(lj_handle, 'BOOTLOADER_VERSION')),
-                                        '.3f')
+    start_up_state['hw_ver'] = float(format(ljm.eReadName(lj_handle, 'HARDWARE_VERSION'), '.4f'))
+    start_up_state['fw_ver'] = float(format(ljm.eReadName(lj_handle, 'FIRMWARE_VERSION'), '.4f'))
+    start_up_state['boot_ver'] = float(format(ljm.eReadName(lj_handle, 'BOOTLOADER_VERSION'),
+                                              '.4f'))
     start_up_state['ser_no'] = int(ljm.eReadName(lj_handle, 'SERIAL_NUMBER'))
     dev_name = bytes(ljm.eReadNameByteArray(lj_handle, 'DEVICE_NAME_DEFAULT', 49))
     d_name = ''

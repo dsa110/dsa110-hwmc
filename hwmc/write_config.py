@@ -1,13 +1,20 @@
 """Utility to allow storage of configuration parameters in LabJack T7 flash memory"""
 
-import logging
-import logging.handlers
+import time as time
 
+import dsautils.dsa_syslog as dsl
 from labjack import ljm
 from labjack.ljm import constants as ljc
 
-from hwmc.hwmc_logging import CustomFormatter
-from hwmc.hwmc_logging import LogConf as Conf
+from hwmc.common import Config as CONF
+
+# Set up module-level logging.
+MODULE_NAME = __name__
+LOGGER = dsl.DsaSyslogger(CONF.SUBSYSTEM, CONF.LOGGING_LEVEL, MODULE_NAME)
+LOGGER.app(CONF.APPLICATION)
+LOGGER.version(CONF.VERSION)
+LOGGER.level(CONF.LOGGING_LEVEL)
+LOGGER.info("{} logger created".format(MODULE_NAME))
 
 INTERNAL_FLASH_KEY = 61800
 INTERNAL_FLASH_ERASE = 61820
@@ -33,12 +40,6 @@ def write_config_to_flash(lj_handle, cal_table):
 
     """
 
-    # Set up logging.
-    logger = logging.getLogger(Conf.LOGGER + '.' + __name__)
-
-    # Set class name for logging.
-    CustomFormatter.log_msg_fmt['class'] = 'None'
-
     # Check to see if new values are different from stored values.
     same = True
     addr = 0
@@ -46,14 +47,15 @@ def write_config_to_flash(lj_handle, cal_table):
         ljm.eWriteAddress(lj_handle, INTERNAL_FLASH_READ_POINTER, ljc.INT32, addr)
         old = ljm.eReadAddressArray(lj_handle, INTERNAL_FLASH_READ, ljc.FLOAT32, 1)[0]
         # Numerical representations of new value and value in flash may not be identical.
-        if abs(old - value) > 0.0001:
+        # Also test for NaN
+        if (old != old) or (abs(old - value) > 0.0001):
             same = False
             break
         addr = addr + 4
 
     # Write new values if they are different.
     if not same:
-        logger.info("Writing new inclinometer calibration values.")
+        LOGGER.info("Writing new inclinometer calibration values.")
         # Start by erasing flash to avoid errors.
         a_addresses = [INTERNAL_FLASH_KEY, INTERNAL_FLASH_ERASE]
         a_data_types = [ljc.INT32, ljc.INT32]
@@ -72,3 +74,7 @@ def write_config_to_flash(lj_handle, cal_table):
             a_values[2] = value
             ljm.eWriteAddresses(lj_handle, num_frames, a_addresses, a_data_types, a_values)
             addr = addr + 4
+        # Restart Lua script to pick up new values from flash
+        ljm.eWriteName(lj_handle, 'LUA_RUN', 0)
+        time.sleep(2.0)
+        ljm.eWriteName(lj_handle, 'LUA_RUN', 1)

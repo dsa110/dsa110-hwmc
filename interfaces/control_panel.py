@@ -15,10 +15,11 @@ import time
 import tkinter as tk
 
 import etcd3 as etcd
-from hwmc import get_yaml_config
+from dsautils.dsa_functions36 import read_yaml
 
 ROW_PAD = 20
 COL_PAD = 30
+REFRESH_SECONDS = 0.5
 
 # Dictionary of monitor points to display. This has to be manually synchronized with the antenna
 # control system.
@@ -64,6 +65,9 @@ BEB_MPS = {'time': ("MJD", 'analog', "day"),
            'if_pwr_b': ("IF B power", 'analog', "dBm"),
            'lo_mon': ("LO monitor", 'analog', "V"),
            'beb_temp': ("BEB temp", 'analog', "°C"),
+           'psu_voltage': ("PSU voltage", 'analog', "V"),
+           'psu_current': ("PSU current", 'analog', "mA"),
+           'lj_temp': ("LJ temp", 'analog', "°C"),
            }
 
 
@@ -474,9 +478,9 @@ class HwmcControlPanel:
             self.etcd.cancel_watch(self.watch_id)
             self.ant_num = None
             self.connected = False
-        self.etcd_ant_key = '/jwl/mon/ant/{0:d}'.format(ant_num)
-        self.etcd_beb_key = '/jwl/mon/beb/{0:d}'.format(ant_num)
-        self.etcd_cmd_key = '/jwl/cmd/ant/{0:d}'.format(ant_num)
+        self.etcd_ant_key = '/mon/ant/{0:d}'.format(ant_num)
+        self.etcd_beb_key = '/mon/beb/{0:d}'.format(ant_num)
+        self.etcd_cmd_key = '/cmd/ant/{0:d}'.format(ant_num)
         try:
             self.etcd = etcd.client(host=self.etcd_endpoint[0], port=self.etcd_endpoint[1])
             self.etcd.add_watch_callback(self.etcd_ant_key, self.ant_mp_callback)
@@ -551,8 +555,8 @@ class HwmcControlPanel:
 
 
 def main():
-    cpl_config = {'etcd_endpoint': '192.168.1.132:2379'
-                  }
+    control_panel_config = {'etcd_endpoint': '192.168.1.132:2379'
+                            }
 
     parser = argparse.ArgumentParser(description="Run the DSA-110 hardware monitor and control"
                                                  "panel")
@@ -560,25 +564,25 @@ def main():
                         help="Fully qualified name of YAML configuration file. "
                              "If used, other arguments are ignored, except for '-s', '--s'")
     parser.add_argument('-i', '--etcd_ip', metavar='ETCD_IP', type=str, required=False,
-                        default=cpl_config['etcd_endpoint'], help="Etcd server IP address and port."
-                                                                  " Default: {}".format(
-            cpl_config['etcd_endpoint']))
+                        default=control_panel_config['etcd_endpoint'],
+                        help="Etcd server IP address and port."
+                             " Default: {}".format(
+                            control_panel_config['etcd_endpoint']))
 
     args = parser.parse_args()
     if args.config_file is not None:
         yaml_fn = args.config_file
-        yaml_config = get_yaml_config.read_yaml(yaml_fn)
+        yaml_config = read_yaml(yaml_fn)
         for item in yaml_config:
             if item == 'etcd_endpoint':
-                cpl_config[item] = yaml_config[item].split(':')
+                control_panel_config[item] = yaml_config[item].split(':')
             else:
-                cpl_config[item] = yaml_config[item]
+                control_panel_config[item] = yaml_config[item]
     else:
         control_panel_config = {'etcd_endpoint': args.etcd_ip.split(':')}
 
     window = HwmcControlPanel(control_panel_config)
 
-    REFRESH_SECONDS = 0.5
     while not window.quit:
         window.update()
         t = REFRESH_SECONDS - time.time() % REFRESH_SECONDS

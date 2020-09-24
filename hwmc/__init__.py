@@ -1,2 +1,3 @@
-__all__ = ['get_yaml_config', 'dsa_labjack', 'hwmc_logging', 'hwmc', 'lj_startup',
-           'lua_script_utilities']
+"""Information for hwmc package"""
+
+__all__ = ['dsa_labjack', 'hwmc', 'lj_startup', 'lua_script_utilities']

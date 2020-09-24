@@ -24,23 +24,29 @@
         for ant_num, ant in device_list.ants: ant.run()
     """
 
+import inspect
 import json
-import logging
-import logging.handlers
 import os
 import time
 
+import dsautils.dsa_syslog as dsl
 import etcd3 as etcd
 from astropy.time import Time
+from dsautils import dsa_constants as Const
 from labjack import ljm
 
-import hwmc.common
 import hwmc.lua_script_utilities as lua
-import dsautils.dsa_syslog as dsl
 from hwmc import lj_startup as sf
-from hwmc.write_config import *
+from hwmc.common import Config as CONF
+from hwmc.write_config import write_config_to_flash
 
-ABSOLUTE_ZERO = -273.15
+# Set up module-level logging.
+MODULE_NAME = __name__
+LOGGER = dsl.DsaSyslogger(CONF.SUBSYSTEM, CONF.LOGGING_LEVEL, MODULE_NAME)
+LOGGER.app(CONF.APPLICATION)
+LOGGER.version(CONF.VERSION)
+LOGGER.function('None')
+LOGGER.info("{} logger created".format(MODULE_NAME))
 
 
 # -------------- LabJack T7 initialization class ------------------
@@ -74,10 +80,10 @@ class DiscoverT7:
         self.class_name = (my_class[my_class.find('.') + 1: my_class.find("'>'") - 1])
 
         # Set up logging.
-        self.logger = dsl.DsaSyslogger(Conf.LOG_SUBSYST, logging.INFO)
-        self.logger.app(self.class_name)
-        self.logger.function(__name__)
-        self.logger.info("Searching for LabJack T7's")
+        func = inspect.stack()[0][3]
+        func_name = "{}::{}".format(self.class_name, func)
+        LOGGER.function(func_name)
+        LOGGER.info("Searching for LabJack T7's")
 
         # Set up arrays to hold device information for discovered LabJack devices.
         self.num_ant = 0
@@ -115,10 +121,12 @@ class DiscoverT7:
                     self.ants[lj_location] = DsaAntLabJack(lj_handle, lj_location,
                                                            etcd_endpoint, sim)
                     self.num_ant += 1
+                    LOGGER.info("Antenna {} found".format(lj_location))
                     print("Antenna {} found".format(lj_location))
                 elif lj_type == Constants.BEB_TYPE:
                     self.bebs[lj_location] = DsaBebLabJack(lj_handle, lj_location, etcd_endpoint)
                     self.num_beb += 1
+                    LOGGER.info("BEB {} found".format(lj_location))
                     print("Analog backend {} found".format(lj_location))
 
     def _creat_sim_devices(self):
@@ -145,15 +153,15 @@ class DiscoverT7:
         In non-simulate mode _check to see if LabJacks can be detected. Log and raise error if
         there is a problem.
         """
+        func = inspect.stack()[0][3]
+        func_name = "{}::{}".format(self.class_name, func)
         try:
             self.num_found, a_device_types, a_connection_types, a_serial_numbers, _ = \
                 ljm.listAll(ljm.constants.dtT7, ljm.constants.ctUSB)
 
         except ljm.LJMError as err:
-            # Get class for logging.
-            CustomFormatter.log_msg_fmt['class'] = self.class_name
-            self.logger.critical("Error searching for LabJack devices. LJMError: {}"
-                                 .format(err))
+            LOGGER.function(func_name)
+            LOGGER.critical("Error searching for LabJack devices. LJMError: {}".format(err))
             raise ljm.LJMError
         return a_device_types, a_connection_types, a_serial_numbers
 
@@ -174,7 +182,8 @@ class DiscoverT7:
             location (int): antenna number for antenna type, or first of 10 antennas if BEB type
         """
 
-        CustomFormatter.log_msg_fmt['class'] = self.class_name
+        func = inspect.stack()[0][3]
+        func_name = "{}::{}".format(self.class_name, func)
         try:
             addr_bits = int(ljm.eReadName(lj_handle, Constants.ID_WORD))
             if addr_bits < 128:
@@ -183,8 +192,8 @@ class DiscoverT7:
                 lj_type = Constants.BEB_TYPE
             location = int(addr_bits & 0x7f)
         except ljm.LJMError as err:
-            CustomFormatter.log_msg_fmt['class'] = self.class_name
-            self.logger.error("Error reading LabJack. LJMError: {}".format(err))
+            LOGGER.function(func_name)
+            LOGGER.error("Error reading LabJack. LJMError: {}".format(err))
             lj_type = Constants.NULL_TYPE
             location = 0
         return lj_type, location
@@ -239,32 +248,36 @@ class DsaAntLabJack:
             port for the etcd key/value store.
 
         """
+        self.valid = False
+        # Set up class-level logging (per class instance).
         my_class = str(self.__class__)
         self.class_name = (my_class[my_class.find('.') + 1: my_class.find("'>'") - 1])
-        CustomFormatter.log_msg_fmt['class'] = self.class_name
-        self.valid = False
+        func = inspect.stack()[0][3]
+        func_name = "{}::ant{}.{}".format(self.class_name, ant_num, func)
+        logger_name = '{}_Ant{}'.format(MODULE_NAME, ant_num)
+        self.logger = dsl.DsaSyslogger(CONF.SUBSYSTEM, CONF.LOGGING_LEVEL, logger_name)
+        self.logger.app(CONF.APPLICATION)
+        self.logger.version(CONF.VERSION)
+        self.logger.function(func_name)
+        self.logger.info("{} logger created".format(logger_name))
+        self.logger.info("Initializing")
+        self.logger.info("Antenna {} connected".format(ant_num))
+
         self.sim = sim
         self.stop = False
         self.lj_handle = lj_handle
         self.ant_num = ant_num
 
-        # Set up logging.
-        self.logger = logging.getLogger(Conf.LOGGER + '.' + __name__)
-
-        # Set class name for logging.
-        CustomFormatter.log_msg_fmt['class'] = self.class_name
-        self.logger.info("Initializing")
-        self.logger.info("Antenna {} connected".format(self.ant_num))
-
-        self.etcd_mon_key = '/jwl/mon/ant/{0:d}'.format(ant_num)
-        self.etcd_cmd_key = '/jwl/cmd/ant/{0:d}'.format(ant_num)
-        self.etcd_cal_key = '/jwl/cal/ant/{0:d}'.format(ant_num)
-        self.etcd_cmd_all_key = '/jwl/cmd/ant/0'
+        self.etcd_mon_key = '/mon/ant/{0:d}'.format(ant_num)
+        self.etcd_cmd_key = '/cmd/ant/{0:d}'.format(ant_num)
+        self.etcd_cal_key = '/cal/ant/{0:d}'.format(ant_num)
+        self.etcd_cmd_all_key = '/cmd/ant/0'
         self.etcd_client = etcd.client(host=etcd_endpoint[0], port=etcd_endpoint[1])
         try:
             self.etcd_client.add_watch_callback(self.etcd_cmd_key, self.cmd_callback)
             self.etcd_client.add_watch_callback(self.etcd_cmd_all_key, self.cmd_callback)
             self.etcd_valid = True
+            self.logger.info("Connected to etcd store")
         except etcd.exceptions.ConnectionFailedError:
             self.logger.critical("Unable to connect to etcd store")
             self.etcd_valid = False
@@ -328,6 +341,11 @@ class DsaAntLabJack:
             LabJack T7 on start up.
         """
 
+        func = self.ant_num, inspect.stack()[0][3]
+        func_name = "{}::{}.{}".format(self.class_name, self.ant_num, func)
+        self.logger.function(func_name)
+        self.logger.info("Initializing antenna")
+
         # Digital section
         # Input register for LabJack ID
         ljm.eWriteName(self.lj_handle, "FIO_DIRECTION", 0b00000000)
@@ -355,8 +373,8 @@ class DsaAntLabJack:
             ljm.close(self.lj_handle)
 
     def _check_cal(self):
-        # Get class for logging.
-        CustomFormatter.log_msg_fmt['class'] = self.class_name
+        func = self.ant_num, inspect.stack()[0][3]
+        func_name = "{}::ant{}.{}".format(self.class_name, self.ant_num, func)
         if self.etcd_valid:
             val = self.etcd_client.get(self.etcd_cal_key)
             if val[0] is not None:
@@ -365,7 +383,8 @@ class DsaAntLabJack:
                 cal_table = cal_info['cal_table']
                 write_config_to_flash(self.lj_handle, cal_table)
             else:
-                self.logger.error("Unable to get inclinometer cal for ant-{} thread".
+                self.logger.function(func_name)
+                self.logger.error("Unable to get inclinometer cal for Ant{}".
                                   format(self.ant_num))
 
     def load_script(self, script_name):
@@ -378,23 +397,26 @@ class DsaAntLabJack:
             script_name (str): Fully qualified name of Lua script to load
         """
 
+        func = self.ant_num, inspect.stack()[0][3]
+        func_name = "{}::ant{}.{}".format(self.class_name, self.ant_num, func)
+        self.logger.function(func_name)
         if os.path.isfile(script_name) is True:
             script = lua.LuaScriptUtilities(script_name, self.lj_handle)
             script.load()
-            print("Saving script to flash")
+            self.logger.info("Saving script to flash")
             time.sleep(1.0)
             script.save_to_flash()
             time.sleep(1.0)
-            print("Configuring to run on startup")
+            self.logger.info("Configuring to run on startup")
             script.run_on_startup()
             time.sleep(1.0)
-            print("Starting script")
+            self.logger.info("Starting script")
             if script.run(debug=False) is True:
-                print("OK")
+                self.logger.info("Script started OK")
             else:
-                print("Failed")
+                self.logger.info("Failed to start script")
         else:
-            print("Script {} not found".format(script_name))
+            self.logger.info("Script {} not found".format(script_name))
 
     def _get_data(self):
         """Read data from LJ T7 and insert into monitor point dictionary.
@@ -425,7 +447,7 @@ class DsaAntLabJack:
         self.monitor_points['feb_temp_b'] = 100 * a_values[11] - 50
         self.monitor_points['psu_volt'] = a_values[12]
         self.monitor_points['ant_el_raw'] = a_values[13]
-        self.monitor_points['lj_temp'] = a_values[14] + ABSOLUTE_ZERO
+        self.monitor_points['lj_temp'] = a_values[14] + Const.ABS_ZERO
         dig_val = int(a_values[15])
         self.monitor_points['emergency_off'] = bool((dig_val >> 8) & 0b01)
         self.monitor_points['drv_cmd'] = (dig_val >> 9) & 0b11
@@ -446,10 +468,12 @@ class DsaAntLabJack:
             cmd (:obj:'dict' of 'str':'bool' or 'str' or 'float'): Command far antenna system to
             execute, along with any argument required.
         """
+        func = self.ant_num, inspect.stack()[0][3]
+        func_name = "{}::ant{}.{}".format(self.class_name, self.ant_num, func)
         cmd_name = cmd['cmd']
         cmd_name = cmd_name.lower()
-        CustomFormatter.log_msg_fmt['class'] = self.class_name
         if cmd_name in self.lj_ant_cmds:
+            self.logger.function(func_name)
             if len(cmd) > 1:
                 args = cmd['val']
                 if isinstance(args, str):
@@ -483,11 +507,9 @@ class DsaAntLabJack:
 
         This function should be run in a thread for this antenna instance."""
 
-        # Set up logging
-        self.logger = logging.getLogger(Conf.LOGGER + '.' + __name__)
-
-        # Get class for logging.
-        CustomFormatter.log_msg_fmt['class'] = self.class_name
+        func = inspect.stack()[0][3]
+        func_name = "{}::ant{}.{}".format(self.class_name, self.ant_num, func)
+        self.logger.function(func_name)
         self.logger.debug("Running antenna {} thread".format(self.ant_num))
         # Run data query loop until stop flag set
         while not self.stop:
@@ -499,9 +521,11 @@ class DsaAntLabJack:
             sleep_time = next_time - time.time()
             if sleep_time > 0.0:
                 time.sleep(sleep_time)
-        CustomFormatter.log_msg_fmt['class'] = self.class_name
+        self.logger.function(func_name)
         self.logger.info("Antenna {} disconnecting".format(self.ant_num))
-        self.etcd_client.close()
+        if self.etcd_valid:
+            self.logger.info("Antenna {} closing etcd connection".format(self.ant_num))
+            self.etcd_client.close()
 
     def switch_noise_a(self, state):
         """Turn noise source A on or off"""
@@ -520,25 +544,31 @@ class DsaAntLabJack:
             pol (str): 'a' or 'b' according to the requested polarization.
             state (str): 'on' or 'off'
         """
+        func = inspect.stack()[0][3]
+        func_name = "{}::ant{}.{}".format(self.class_name, self.ant_num, func)
         if state is False:
             state_val = 1
         elif state is True:
             state_val = 0
         else:
             msg = "Ant {}: Invalid noise diode state requested: {}".format(self.ant_num, state)
-            CustomFormatter.log_msg_fmt['class'] = self.class_name
-            self.logger.info(msg)
+            self.logger.function(func_name)
+            self.logger.error(msg)
             return
         if pol == 'a':
             msg = "Ant {}: Turning polarization A noise diode {}".format(self.ant_num, state)
+            self.logger.function(func_name)
+            self.logger.info(msg)
             ljm.eWriteName(self.lj_handle, Constants.NOISE_A, state_val)
         elif pol == 'b':
             msg = "Ant {}: Turning polarization B noise diode {}".format(self.ant_num, state)
+            self.logger.function(func_name)
+            self.logger.info(msg)
             ljm.eWriteName(self.lj_handle, Constants.NOISE_B, state_val)
         else:
             msg = "Ant {}: Invalid noise diode state requested: {}".format(self.ant_num, pol)
-        CustomFormatter.log_msg_fmt['class'] = self.class_name
-        self.logger.info(msg)
+            self.logger.function(func_name)
+            self.logger.error(msg)
 
     def _motor_cmd(self, cmd, arg=0):
         """Set a flag register ad position register in the antenna LJ T7 to execute a motion.
@@ -565,8 +595,10 @@ class DsaAntLabJack:
 
         Logs the command and calls the low-level function to control the motor.
         """
+        func = inspect.stack()[0][3]
+        func_name = "{}::ant{}.{}".format(self.class_name, self.ant_num, func)
         msg = "Ant {}: Stopping antenna".format(self.ant_num)
-        CustomFormatter.log_msg_fmt['class'] = self.class_name
+        self.logger.function(func_name)
         self.logger.info(msg)
         self._motor_cmd('halt')
 
@@ -578,10 +610,13 @@ class DsaAntLabJack:
         Args:
             pos (float): Target elevation for antenna move command.
         """
+        func = inspect.stack()[0][3]
+        func_name = "{}::ant{}.{}".format(self.class_name, self.ant_num, func)
+
         pos = _validate_num(pos)
         if pos is not None:
-            CustomFormatter.log_msg_fmt['class'] = self.class_name
             msg = "Ant {}: Moving to {: .2f}".format(self.ant_num, pos)
+            self.logger.function(func_name)
             self.logger.info(msg)
             self._motor_cmd('move', pos)
 
@@ -617,9 +652,19 @@ class DsaBebLabJack:
 
     def __init__(self, lj_handle, beb_num, etcd_endpoint):
         """Initialize an instance of a backend monitor object."""
-        my_class = str(self.__class__)
+        # Set up class-level logging (per class instance).
         self.valid = False
+        module_name = __name__
+        my_class = str(self.__class__)
         self.class_name = (my_class[my_class.find('.') + 1: my_class.find("'>'") - 1])
+        func = inspect.stack()[0][3]
+        func_name = "{}::beb{}.{}".format(self.class_name, beb_num, func)
+        logger_name = '{}_BEB{}'.format(module_name, beb_num)
+        self.logger = dsl.DsaSyslogger(CONF.SUBSYSTEM, CONF.LOGGING_LEVEL, logger_name)
+        self.logger.app(CONF.APPLICATION)
+        self.logger.version(CONF.VERSION)
+        self.logger.function(func_name)
+        self.logger.info("{} logger created".format(logger_name))
         self.stop = False
         self.lj_handle = lj_handle
         self.etcd_mon_key = []
@@ -627,16 +672,16 @@ class DsaBebLabJack:
         self.beb_num = beb_num
         self.etcd_valid = False
         for i in range(self.BEB_PER_LJ):
-            self.etcd_mon_key.append('/jwl/mon/beb/{0:d}'.format(beb_num + i))
-            self.etcd_cnf_key.append('/jwl/cnf/beb/{0:d}'.format(beb_num + i))
+            self.etcd_mon_key.append('/mon/beb/{0:d}'.format(beb_num + i))
+            self.etcd_cnf_key.append('/cnf/beb/{0:d}'.format(beb_num + i))
         self.etcd_client = etcd.client(host=etcd_endpoint[0], port=etcd_endpoint[1])
         try:
             self.etcd_client.status()
             self.etcd_valid = True
+            self.logger.info("BEB {} connected to Etcd store".format(beb_num))
         except etcd.exceptions.ConnectionFailedError:
+            self.logger.info("BEB {} cannot connect to Etcd store".format(beb_num))
             self.etcd_valid = False
-        my_class = str(self.__class__)
-        self.class_name = (my_class[my_class.find('.') + 1: my_class.find("'>'") - 1])
         self.valid = False
 
         self.monitor_points = list()
@@ -654,6 +699,7 @@ class DsaBebLabJack:
                  'beb_temp': 0.0,
                  'psu_voltage': 0.0,
                  'psu_current': 0.0,
+                 'lj_temp': 0.0,
                  }
             )
         # Initialize LabJack settings
@@ -661,20 +707,16 @@ class DsaBebLabJack:
         startup_mps = self._init_beb_labjack()
         self.send_to_etcd(self.etcd_mon_key[0], startup_mps)
 
-        # Set up logging
-        self.logger = logging.getLogger(Conf.LOGGER + '.' + __name__)
-
-        # Get class for logging.
-        CustomFormatter.log_msg_fmt['class'] = self.class_name
-        self.logger.info("Initializing")
-        self.logger.info("BEB {} connected".format(beb_num))
-
     def _init_beb_labjack(self):
         """Check the configuration of the LJ T7 and set analog ranges.
 
         Returns:
             :obj:'dict': Dictionary of monitor points containing LJ T7 startup information.
         """
+        func = inspect.stack()[0][3]
+        func_name = "{}::beb{}.{}".format(self.class_name, self.beb_num, func)
+        self.logger.function(func_name)
+        self.logger.info("Initializing BEB {}".format(self.beb_num))
         startup_mp = sf.t7_startup_check(self.lj_handle, False)
         # Analog section
         # Input voltage range
@@ -695,7 +737,7 @@ class DsaBebLabJack:
         """
         if self.valid is True:
             psu_vals = ljm.eReadNameArray(self.lj_handle, "AIN0", 2)
-            beb_temp = ljm.eReadName(self.lj_handle, "TEMPERATURE_DEVICE_K")
+            lj_temp = ljm.eReadName(self.lj_handle, "TEMPERATURE_DEVICE_K")
             analog_vals = ljm.eReadNameArray(self.lj_handle, "AIN48", 80)
             time_stamp = float("{:.8f}".format(Time.now().mjd))
             j = 0
@@ -712,13 +754,15 @@ class DsaBebLabJack:
                 j += 1
                 self.monitor_points[i]['lo_mon'] = 1000 * analog_vals[j]
                 j += 1
-                self.monitor_points[i]['beb_current_a'] = 100.0 * psu_vals[0]
+                self.monitor_points[i]['beb_current_a'] = 100.0 * analog_vals[j]
                 j += 1
-                self.monitor_points[i]['beb_current_b'] = 100.0 * psu_vals[1]
+                self.monitor_points[i]['beb_current_b'] = 100.0 * analog_vals[j]
+                j += 1
+                self.monitor_points[i]['beb_temp'] = 100.0 * analog_vals[j] - 50.0
                 j += 1
                 self.monitor_points[i]['psu_voltage'] = psu_vals[0]
-                self.monitor_points[i]['psu_current'] = psu_vals[1]
-                self.monitor_points[i]['beb_temp'] = beb_temp + ABSOLUTE_ZERO
+                self.monitor_points[i]['psu_current'] = 1000 * psu_vals[1]
+                self.monitor_points[i]['lj_temp'] = lj_temp
         return self.monitor_points
 
     def send_to_etcd(self, key, mon_data):
@@ -733,28 +777,33 @@ class DsaBebLabJack:
         This function should be run in a thread for this BEB instance."""
 
         # Set up logging
-        self.logger = logging.getLogger(Conf.LOGGER + '.' + __name__)
+        func = inspect.stack()[0][3]
+        func_name = "{}::beb{}.{}".format(self.class_name, self.beb_num, func)
+        self.logger.function(func_name)
+        self.logger.info("Running BEB {} thread".format(self.beb_num))
 
-        # Get class for logging.
-        CustomFormatter.log_msg_fmt['class'] = self.class_name
-        self.logger.debug("Running BEB {} thread".format(self.beb_num))
         # Run data query loop until stop flag set
         while not self.stop:
             mon_data = self._get_data
-            for i in range(len(mon_data)):
-                self.send_to_etcd(self.etcd_mon_key[i], mon_data[i])
+            enumerate(mon_data)
+            for i, dat in enumerate(mon_data):
+                self.send_to_etcd(self.etcd_mon_key[i], dat)
             t_now = time.time()
             next_time = (int(t_now / Constants.POLLING_INTERVAL) + 1) * Constants.POLLING_INTERVAL
             sleep_time = next_time - time.time()
             if sleep_time > 0.0:
                 time.sleep(sleep_time)
 
-        CustomFormatter.log_msg_fmt['class'] = self.class_name
+        self.logger.function(func_name)
         self.logger.info("BEB {} disconnecting".format(self.beb_num))
         self.etcd_client.close()
 
     def stop_thread(self):
-        """Sets a flag to stop the thread this instance is run in"""
+        """Set a flag to stop the thread this instance is run in"""
+        func = inspect.stack()[0][3]
+        func_name = "{}::beb{}.{}".format(self.class_name, self.beb_num, func)
+        self.logger.function(func_name)
+        self.logger.info("Stopping BEB {}".format(self.beb_num))
         self.stop = True
 
 
@@ -762,7 +811,7 @@ class Constants:
     """Useful constants for the LabJack classes to use"""
 
     # Number of LabJack T7 modules to simulate
-    NUM_SIM = 1
+    NUM_SIM = 3
 
     # Types of LJ T7
     NULL_TYPE = 0

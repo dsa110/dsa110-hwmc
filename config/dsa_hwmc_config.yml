@@ -1,9 +1,9 @@
 # DSA-110 hardware monitor and control configuration file.
 # dsamaster
 # Simulation flag (bool). True when in sim mode, False when using real hardware.
-sim: False
+sim: True
 # Maximum priority to log
-log_priority: 7
+log_priority: 'info'
 # etcd connection details
 etcd_endpoint: "192.168.1.132:2379"
 # Lua script directory

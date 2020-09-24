@@ -2,6 +2,7 @@
   <dictionary name="lamb">
     <words>
       <w>addr</w>
+      <w>astropy</w>
       <w>bebs</w>
       <w>bootloader</w>
       <w>cmds</w>
@@ -12,6 +13,7 @@
       <w>hwmc</w>
       <w>inclinometer</w>
       <w>labjack</w>
+      <w>matplotlib</w>
       <w>vals</w>
     </words>
   </dictionary>

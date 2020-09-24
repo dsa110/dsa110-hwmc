@@ -1,17 +1,24 @@
 """This defines a class for handling Lua scripts for LabJack T7 DAQ modules"""
 
-import logging
-import logging.handlers
+import inspect
 import time
 from pathlib import Path
 from time import sleep
 from tkinter import Tk
 from tkinter import filedialog
 
+import dsautils.dsa_syslog as dsl
 from labjack import ljm
 
-from hwmc.hwmc_logging import CustomFormatter
-from hwmc.hwmc_logging import LogConf as Conf
+from hwmc.common import Config as CONF
+
+# Set up module-level logging.
+MODULE_NAME = __name__
+LOGGER = dsl.DsaSyslogger(CONF.SUBSYSTEM, CONF.LOGGING_LEVEL, MODULE_NAME)
+LOGGER.app(CONF.APPLICATION)
+LOGGER.version(CONF.VERSION)
+LOGGER.level(CONF.LOGGING_LEVEL)
+LOGGER.info("{} logger created".format(MODULE_NAME))
 
 
 class LuaScriptUtilities:
@@ -31,12 +38,10 @@ class LuaScriptUtilities:
         my_class = str(self.__class__)
         self.class_name = (my_class[my_class.find('.') + 1: my_class.find("'>'") - 1])
 
-        # Set up logging
-        self.logger = logging.getLogger(Conf.LOGGER + '.' + __name__)
-
-        # Get class for logging.
-        CustomFormatter.log_msg_fmt['class'] = self.class_name
-        self.logger.info("Initializing Lua script class")
+        func = inspect.stack()[0][3]
+        func_name = "{}::{}".format(self.class_name, func)
+        LOGGER.function(func_name)
+        LOGGER.info("Initializing Lua script class")
 
         self.handle = lj_handle
         self.err = True
@@ -60,9 +65,9 @@ class LuaScriptUtilities:
                 self.err = False
             root.destroy()
         if self.err is True:
-            self.logger.info("Found Lua script '{}'".format(self.script))
+            LOGGER.info("Found Lua script '{}'".format(self.script))
         else:
-            self.logger.info("No valid Lua script found")
+            LOGGER.info("No valid Lua script found")
 
     def load(self):
         """Load the current Lua file into the LabJack T7.
@@ -70,9 +75,8 @@ class LuaScriptUtilities:
         This function halts any Lua script running in the T7 and loads the script into it."""
         if self.err is False:
             # Get class for logging.
-            CustomFormatter.log_msg_fmt['class'] = self.class_name
             msg = "Loading script: {}".format(self.script)
-            self.logger.info(msg)
+            LOGGER.info(msg)
 
             # Disable a running script by writing 0 to LUA_RUN twice
             ljm.eWriteName(self.handle, "LUA_RUN", 0)

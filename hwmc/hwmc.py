@@ -10,38 +10,42 @@ Communication with the T7s is over Ethernet, and other communications with the a
 are via an etcd key/value store.
 """
 
-import logging
-
+import inspect
 import threading
 import time
 from threading import Thread
 
-from hwmc import dsa_labjack as dlj
-from hwmc.hwmc_logging import LogConf as Conf
 import dsautils.dsa_syslog as dsl
+
+from hwmc import dsa_labjack as dlj
+from hwmc.common import Config as CONF
+
+# Set up module-level logging.
+MODULE_NAME = __name__
+LOGGER = dsl.DsaSyslogger(CONF.SUBSYSTEM, CONF.LOGGING_LEVEL, MODULE_NAME)
+LOGGER.app(CONF.APPLICATION)
+LOGGER.version(CONF.VERSION)
+LOGGER.info("{} logger created".format(MODULE_NAME))
 
 
 class Hwmc:
     """Hardware monitor and control class to coordinate analog system via LabJack T7 modules"""
 
-    def __init__(self, config):
+    def __init__(self):
         """Initialize the antenna and backend monitor and control system state.
 
-        Initialize the DSA-110 hardware monitor state using the parameters in the supplied argument.
-
-        Args:
-            config (:obj:'dict'): Dictionary of parameters for controlling the configuration and
-            behavior of the monitor system.
+        Initialize the DSA-110 hardware monitor state using the parameters in 'common.py'.
         """
+        self.etcd_endpoint = CONF.ETCD_ENDPOINT
+        self.sim = CONF.SIM
+        self.ants = None
+        self.bebs = None
 
         class_name = str(self.__class__)
         self.my_class = (class_name[class_name.find('.') + 1: class_name.find("'>'") - 1])
-        self.etcd_endpoint = config['etcd_endpoint']
-        self.sim = config['sim']
-        self.log_file = config['log_file']
-        self.log_priority = config['log_priority']
-        self.ants = None
-        self.bebs = None
+        func_name = inspect.stack()[0][3]
+        LOGGER.function(func_name)
+        LOGGER.info("Hwmc class initialized")
 
     def run(self):
         """Start all the threads required for monitor and control.
@@ -53,37 +57,59 @@ class Hwmc:
         class_name = str(self.__class__)
         self.my_class = (class_name[class_name.find('.') + 1: class_name.find("'>'") - 1])
 
-        if self.sim is True:
-            print("==================\n Simulation mode!\n==================\n")
-
         # Set up logging.
-        logger = dsl.DsaSyslogger(Conf.LOG_SUBSYST, logging.INFO)
-        logger.info("Main logger created")
-        logger.info("Logging level set to {}".format(self.log_priority))
+        func_name = inspect.stack()[0][3]
+        LOGGER.function(func_name)
+        if self.sim is True:
+            LOGGER.warning("Running in LabJack simulation mode")
+            print("==================\n Simulation mode!\n==================\n")
+            print("Running in LabJack simulation mode")
 
         # Discover LabJack T7 devices on the network
         devices = dlj.DiscoverT7(sim=self.sim, etcd_endpoint=self.etcd_endpoint)
         self.ants = devices.get_ants()
         self.bebs = devices.get_bebs()
+        num_ants = len(self.ants)
+        num_bebs = len(self.bebs)
 
         # Start running antenna control and monitor threads
-        print("Starting antenna threads")
-        for ant_num, ant in self.ants.items():
-            ant_thread = Thread(target=ant.run, name='Ant-{}'.format(ant_num))
-            ant_thread.start()
+        LOGGER.function(func_name)
+        if num_ants > 0:
+            LOGGER.info("Starting {} antenna thread(s)".format(num_ants))
+            print("Starting {} antenna thread(s)".format(num_ants))
+            for ant_num, ant in self.ants.items():
+                LOGGER.debug("Starting ant {} thread".format(ant_num))
+                ant_thread = Thread(target=ant.run, name='ant{}'.format(ant_num))
+                ant_thread.start()
+        else:
+            LOGGER.warning("No antennas detected")
+            print("No antennas detected")
 
-        print("Starting BEB threads")
-        for beb_num, beb in self.bebs.items():
-            beb_thread = Thread(target=beb.run, name='BEB-{}'.format(beb_num))
-            beb_thread.start()
+        if num_bebs > 0:
+            print("Starting {} BEB thread(s)".format(num_bebs))
+            LOGGER.info("Starting {} BEB thread(s)".format(num_bebs))
+            for beb_num, beb in self.bebs.items():
+                LOGGER.debug("Starting BEB {} thread".format(beb_num))
+                beb_thread = Thread(target=beb.run, name='beb{}'.format(beb_num))
+                beb_thread.start()
+        else:
+            LOGGER.warning("No BEBs detected")
+            print("No BEBs detected")
 
         time.sleep(5)
         thread_count = threading.activeCount()
+        LOGGER.info("{} threads started".format(thread_count))
         print("{} threads started".format(thread_count))
 
     def stop(self):
         """Send signals to stop the running LJ T7 threads"""
+        func_name = inspect.stack()[0][3]
+        LOGGER.function(func_name)
+        LOGGER.info("Stopping antenna thread(s)")
+        print("Stopping antenna thread(s)")
         for _, ant in self.ants.items():
             ant.stop_thread()
+        LOGGER.info("Stopping BEB thread(s)")
+        print("Stopping BEB thread(s)")
         for _, beb in self.bebs.items():
             beb.stop_thread()
