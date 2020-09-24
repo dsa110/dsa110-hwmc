@@ -32,19 +32,19 @@ import time
 import dsautils.dsa_syslog as dsl
 import etcd3 as etcd
 from astropy.time import Time
-from dsautils import dsa_constants as Const
+from dsautils import dsa_constants as C
 from labjack import ljm
 
 import hwmc.lua_script_utilities as lua
 from hwmc import lj_startup as sf
-from hwmc.common import Config as CONF
+from hwmc.common import Config as Conf
 from hwmc.write_config import write_config_to_flash
 
 # Set up module-level logging.
 MODULE_NAME = __name__
-LOGGER = dsl.DsaSyslogger(CONF.SUBSYSTEM, CONF.LOGGING_LEVEL, MODULE_NAME)
-LOGGER.app(CONF.APPLICATION)
-LOGGER.version(CONF.VERSION)
+LOGGER = dsl.DsaSyslogger(Conf.SUBSYSTEM, Conf.LOGGING_LEVEL, MODULE_NAME)
+LOGGER.app(Conf.APPLICATION)
+LOGGER.version(Conf.VERSION)
 LOGGER.function('None')
 LOGGER.info("{} logger created".format(MODULE_NAME))
 
@@ -157,7 +157,7 @@ class DiscoverT7:
         func_name = "{}::{}".format(self.class_name, func)
         try:
             self.num_found, a_device_types, a_connection_types, a_serial_numbers, _ = \
-                ljm.listAll(ljm.constants.dtT7, ljm.constants.ctUSB)
+                ljm.listAll(ljm.constants.dtT7, ljm.constants.ctETHERNET)
 
         except ljm.LJMError as err:
             LOGGER.function(func_name)
@@ -255,9 +255,9 @@ class DsaAntLabJack:
         func = inspect.stack()[0][3]
         func_name = "{}::ant{}.{}".format(self.class_name, ant_num, func)
         logger_name = '{}_Ant{}'.format(MODULE_NAME, ant_num)
-        self.logger = dsl.DsaSyslogger(CONF.SUBSYSTEM, CONF.LOGGING_LEVEL, logger_name)
-        self.logger.app(CONF.APPLICATION)
-        self.logger.version(CONF.VERSION)
+        self.logger = dsl.DsaSyslogger(Conf.SUBSYSTEM, Conf.LOGGING_LEVEL, logger_name)
+        self.logger.app(Conf.APPLICATION)
+        self.logger.version(Conf.VERSION)
         self.logger.function(func_name)
         self.logger.info("{} logger created".format(logger_name))
         self.logger.info("Initializing")
@@ -447,7 +447,7 @@ class DsaAntLabJack:
         self.monitor_points['feb_temp_b'] = 100 * a_values[11] - 50
         self.monitor_points['psu_volt'] = a_values[12]
         self.monitor_points['ant_el_raw'] = a_values[13]
-        self.monitor_points['lj_temp'] = a_values[14] + Const.ABS_ZERO
+        self.monitor_points['lj_temp'] = a_values[14] + C.ABS_ZERO
         dig_val = int(a_values[15])
         self.monitor_points['emergency_off'] = bool((dig_val >> 8) & 0b01)
         self.monitor_points['drv_cmd'] = (dig_val >> 9) & 0b11
@@ -660,9 +660,9 @@ class DsaBebLabJack:
         func = inspect.stack()[0][3]
         func_name = "{}::beb{}.{}".format(self.class_name, beb_num, func)
         logger_name = '{}_BEB{}'.format(module_name, beb_num)
-        self.logger = dsl.DsaSyslogger(CONF.SUBSYSTEM, CONF.LOGGING_LEVEL, logger_name)
-        self.logger.app(CONF.APPLICATION)
-        self.logger.version(CONF.VERSION)
+        self.logger = dsl.DsaSyslogger(Conf.SUBSYSTEM, Conf.LOGGING_LEVEL, logger_name)
+        self.logger.app(Conf.APPLICATION)
+        self.logger.version(Conf.VERSION)
         self.logger.function(func_name)
         self.logger.info("{} logger created".format(logger_name))
         self.stop = False
@@ -678,9 +678,7 @@ class DsaBebLabJack:
         try:
             self.etcd_client.status()
             self.etcd_valid = True
-            self.logger.info("BEB {} connected to Etcd store".format(beb_num))
         except etcd.exceptions.ConnectionFailedError:
-            self.logger.info("BEB {} cannot connect to Etcd store".format(beb_num))
             self.etcd_valid = False
         self.valid = False
 
@@ -699,7 +697,6 @@ class DsaBebLabJack:
                  'beb_temp': 0.0,
                  'psu_voltage': 0.0,
                  'psu_current': 0.0,
-                 'lj_temp': 0.0,
                  }
             )
         # Initialize LabJack settings
@@ -737,7 +734,7 @@ class DsaBebLabJack:
         """
         if self.valid is True:
             psu_vals = ljm.eReadNameArray(self.lj_handle, "AIN0", 2)
-            lj_temp = ljm.eReadName(self.lj_handle, "TEMPERATURE_DEVICE_K")
+            beb_temp = ljm.eReadName(self.lj_handle, "TEMPERATURE_DEVICE_K")
             analog_vals = ljm.eReadNameArray(self.lj_handle, "AIN48", 80)
             time_stamp = float("{:.8f}".format(Time.now().mjd))
             j = 0
@@ -754,15 +751,13 @@ class DsaBebLabJack:
                 j += 1
                 self.monitor_points[i]['lo_mon'] = 1000 * analog_vals[j]
                 j += 1
-                self.monitor_points[i]['beb_current_a'] = 100.0 * analog_vals[j]
+                self.monitor_points[i]['beb_current_a'] = 100.0 * psu_vals[0]
                 j += 1
-                self.monitor_points[i]['beb_current_b'] = 100.0 * analog_vals[j]
-                j += 1
-                self.monitor_points[i]['beb_temp'] = 100.0 * analog_vals[j] - 50.0
+                self.monitor_points[i]['beb_current_b'] = 100.0 * psu_vals[1]
                 j += 1
                 self.monitor_points[i]['psu_voltage'] = psu_vals[0]
-                self.monitor_points[i]['psu_current'] = 1000 * psu_vals[1]
-                self.monitor_points[i]['lj_temp'] = lj_temp
+                self.monitor_points[i]['psu_current'] = psu_vals[1]
+                self.monitor_points[i]['beb_temp'] = beb_temp + C.ABS_ZERO
         return self.monitor_points
 
     def send_to_etcd(self, key, mon_data):

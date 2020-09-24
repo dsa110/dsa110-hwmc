@@ -15,16 +15,16 @@ import threading
 import time
 from threading import Thread
 
-import dsautils.dsa_syslog as dsl
 
+import dsautils.dsa_syslog as dsl
 from hwmc import dsa_labjack as dlj
-from hwmc.common import Config as CONF
+from hwmc.common import Config as Conf
 
 # Set up module-level logging.
 MODULE_NAME = __name__
-LOGGER = dsl.DsaSyslogger(CONF.SUBSYSTEM, CONF.LOGGING_LEVEL, MODULE_NAME)
-LOGGER.app(CONF.APPLICATION)
-LOGGER.version(CONF.VERSION)
+LOGGER = dsl.DsaSyslogger(Conf.SUBSYSTEM, Conf.LOGGING_LEVEL, MODULE_NAME)
+LOGGER.app(Conf.APPLICATION)
+LOGGER.version(Conf.VERSION)
 LOGGER.info("{} logger created".format(MODULE_NAME))
 
 
@@ -36,8 +36,8 @@ class Hwmc:
 
         Initialize the DSA-110 hardware monitor state using the parameters in 'common.py'.
         """
-        self.etcd_endpoint = CONF.ETCD_ENDPOINT
-        self.sim = CONF.SIM
+        self.etcd_endpoint = Conf.etcd_endpoint
+        self.sim = Conf.sim
         self.ants = None
         self.bebs = None
 

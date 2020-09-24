@@ -13,9 +13,9 @@ from time import sleep
 from typing import Dict, Union
 
 import dsautils.dsa_functions36 as util
-
-from hwmc import hwmc
 from hwmc.common import Config
+from hwmc import hwmc
+
 # Mapping of priority values for arguments to this script to Syslog constants
 from hwmc.hwmc import Hwmc
 
@@ -79,14 +79,14 @@ def parse_args(args, config_dict):
 
 
 def store_config(config):
-    Config.SIM = config['sim']
-    Config.ETCD_ENDPOINT = config['etcd_endpoint']
-    Config.LOGGING_LEVEL = config['log_priority']
-    Config.LUA_DIR = config['lua_dir']
-    Config.LJ_HW_VER = config['lj_hw_ver']
-    Config.LJ_FW_VER = config['lj_fw_ver']
-    Config.LJ_BOOT_VER = config['lj_boot_ver']
-    Config.LJ_PROD_ID = config['lj_prod_id']
+    Config.sim = config['sim']
+    Config.etcd_endpoint = config['etcd_endpoint']
+    Config.log_priority = config['log_priority']
+    Config.lua_dir = config['lua_dir']
+    Config.lj_hw_ver = config['lj_hw_ver']
+    Config.lj_fw_ver = config['lj_fw_ver']
+    Config.lj_boot_ver = config['lj_boot_ver']
+    Config.lj_prod_id = config['lj_prod_id']
 
 
 def main():
@@ -120,7 +120,6 @@ def main():
             sleep(5)
             stop_proc = True
     print('Done\n')
-
 
 if __name__ == '__main__':
     main()

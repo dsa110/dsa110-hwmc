@@ -15,11 +15,10 @@ import time
 import tkinter as tk
 
 import etcd3 as etcd
-from dsautils.dsa_functions36 import read_yaml
+from hwmc import get_yaml_config
 
 ROW_PAD = 20
 COL_PAD = 30
-REFRESH_SECONDS = 0.5
 
 # Dictionary of monitor points to display. This has to be manually synchronized with the antenna
 # control system.
@@ -65,9 +64,6 @@ BEB_MPS = {'time': ("MJD", 'analog', "day"),
            'if_pwr_b': ("IF B power", 'analog', "dBm"),
            'lo_mon': ("LO monitor", 'analog', "V"),
            'beb_temp': ("BEB temp", 'analog', "°C"),
-           'psu_voltage': ("PSU voltage", 'analog', "V"),
-           'psu_current': ("PSU current", 'analog', "mA"),
-           'lj_temp': ("LJ temp", 'analog', "°C"),
            }
 
 
@@ -555,8 +551,8 @@ class HwmcControlPanel:
 
 
 def main():
-    control_panel_config = {'etcd_endpoint': '192.168.1.132:2379'
-                            }
+    cpl_config = {'etcd_endpoint': '192.168.1.132:2379'
+                  }
 
     parser = argparse.ArgumentParser(description="Run the DSA-110 hardware monitor and control"
                                                  "panel")
@@ -564,25 +560,25 @@ def main():
                         help="Fully qualified name of YAML configuration file. "
                              "If used, other arguments are ignored, except for '-s', '--s'")
     parser.add_argument('-i', '--etcd_ip', metavar='ETCD_IP', type=str, required=False,
-                        default=control_panel_config['etcd_endpoint'],
-                        help="Etcd server IP address and port."
-                             " Default: {}".format(
-                            control_panel_config['etcd_endpoint']))
+                        default=cpl_config['etcd_endpoint'], help="Etcd server IP address and port."
+                                                                  " Default: {}".format(
+            cpl_config['etcd_endpoint']))
 
     args = parser.parse_args()
     if args.config_file is not None:
         yaml_fn = args.config_file
-        yaml_config = read_yaml(yaml_fn)
+        yaml_config = get_yaml_config.read_yaml(yaml_fn)
         for item in yaml_config:
             if item == 'etcd_endpoint':
-                control_panel_config[item] = yaml_config[item].split(':')
+                cpl_config[item] = yaml_config[item].split(':')
             else:
-                control_panel_config[item] = yaml_config[item]
+                cpl_config[item] = yaml_config[item]
     else:
         control_panel_config = {'etcd_endpoint': args.etcd_ip.split(':')}
 
     window = HwmcControlPanel(control_panel_config)
 
+    REFRESH_SECONDS = 0.5
     while not window.quit:
         window.update()
         t = REFRESH_SECONDS - time.time() % REFRESH_SECONDS

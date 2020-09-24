@@ -1,5 +1,5 @@
 print("Starting DSA-110 antenna control script")
-local ver = 0.920
+local ver = 0.900
 print(string.format("Ver. %.3f", ver))
 
 -- Modbus registers used:
@@ -16,10 +16,6 @@ print(string.format("Ver. %.3f", ver))
 -- 46004: current position, deg.
 -- 46006: error, deg.
 -- 46008: averaged normalised raw inclinometer reading, V.
-
--- Immediately make sure digital outputs are in a safe state
-MB.W(2601, 0, 30)        -- Set EIO digital to outputs as required.
-MB.W(2501, 0, 24)        -- Set drive and noise diode initial states (off).
 
 -- Create required local variables.
 
@@ -63,6 +59,10 @@ local mbWrite = MB.W
 local abs = math.abs
 local asin = math.asin
 local deg = math.deg
+local getTick = LJ.Tick
+local lastTick
+local nowTick
+local format = string.format
 
 -- Create new local functions.
 local function halt()
@@ -94,29 +94,25 @@ end
 
 local gain = 2/vRange
 local function encoderRead()
-    local sinval = 0
-    samples[cur] = mbRead(24, 3)
-    cur = cur + 1
-    if cur > nSamp then
-        cur = 1
-    end
-    local vs = 0
-    for i = 1, nSamp, 1
-    do
-        vs = vs + samples[i]
-    end
-    corr = 5.0 * nSamp / vs
-    rdg = corr * mbRead(7026, 3)
-    mbWrite(46008, 3, rdg)
-    sinval = (rdg - vOff) * gain
-    if sinval > 1 then
-        sinval = 1
-    end
-    if sinval < -1 then
-        sinval = -1
-    end
-    local angle = 180 - (deg(asin(sinval)) + zero)
-    return angle
+  local sinval = 0
+  samples[cur] = mbRead(24, 3)
+  cur = cur + 1
+  if cur > nSamp then
+    cur = 1
+  end
+  local vs = 0
+  for i = 1, nSamp, 1
+  do
+    vs = vs + samples[i]
+  end
+  corr = 5.0 * nSamp/vs
+  rdg = corr * mbRead(7026, 3)
+  mbWrite(46008, 3, rdg)
+  sinval = (rdg - vOff)*gain
+  if sinval > 1 then sinval = 1 end
+  if sinval < -1 then sinval = -1 end
+  local angle = deg(asin(sinval)) + zero
+  return angle
 end
 
 mbWrite(46000, 3, ver)      -- Write code version number into register.
@@ -125,7 +121,7 @@ mbWrite(2601, 0, 30)        -- Set EIO digital to outputs as required.
 mbWrite(2501, 0, 24)        -- Set drive and noise diode initial states (off).
 mbWrite(46180, 0, 0)        -- Make sure no command is active.
 mbWrite(9026, 1, 3)         -- Set AIN13 to min, max, average.
-mbWrite(9326, 1, nAvg)      -- Set AIN13 number of samples.
+mbWrite(9326, 1, nAvg)        -- Set AIN13 number of samples.
 mbWrite(10226, 3, 6000)     -- Set AIN13 scan rate.
 
 dir = halt()                -- Motor off.
@@ -134,47 +130,25 @@ LJ.IntervalConfig(0, timeStep)  -- Set loop interval.
 local dt = 0.000025
 local t = 0
 local drive = 0
+local count = 40
 
 while true do
-  if checkInterval(0) then
-      -- Interval completed.
-      -- Check for new command.
-      cmd = mbRead(46180, 0)
-      mbWrite(46180, 0, 0)
-      goal = mbRead(46002, 3)
-      actual = encoderRead()
-      print(actual)
-      print(actual)
-      print(actual)
-      print(actual)
-      print(actual)
-      print(actual)
-      print(actual)
-      print(actual)
-      print(actual)
-      print(actual)
-      print(actual)
-      print(actual)
-      print(actual)
-      print(actual)
-      print(actual)
-      print(actual)
-      print(actual)
-      print(actual)
-      print(actual)
-      print(actual)
-      err = goal - actual
-      mbWrite(46004, 3, actual)
-      mbWrite(46006, 3, err)
+  if checkInterval(0) then  -- Interval completed.
+    -- Check for new command.
+    cmd = mbRead(46180, 0)
+    mbWrite(46180, 0, 0)
+    goal = mbRead(46002, 3)
+    actual = encoderRead()
+    err = goal - actual
+    mbWrite(46004, 3, actual)
+    mbWrite(46006, 3, err)
+ 
+    -- If new command, execute it.
+    if cmd == 1 then --> Halt motor.
+      state = states.halt
+      dir = halt()
 
-      -- If new command, execute it.
-      if cmd == 1 then
-          --> Halt motor.
-          state = states.halt
-          dir = halt()
-
-      elseif cmd == 2 then
-          --> Move to goal.
+    elseif cmd == 2 then  --> Move to goal.
       state = states.seek
       t = 0
       dt = 0.001 * timeStep
