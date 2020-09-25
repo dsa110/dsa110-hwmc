@@ -32,7 +32,7 @@ class Config:
         print("APPLICATION: {}".format(self.APPLICATION))
         print("LOGGING_LEVEL: {}".format(self.LOGGING_LEVEL))
         print("VERSION: {}".format(self.VERSION))
-        print("sim: {}".format(self.SIM))
+        print("SIM: {}".format(self.SIM))
         print("ETCD_ENDPOINT: {}".format(self.ETCD_ENDPOINT))
         print("LUA_DIR: {}".format(self.LUA_DIR))
         print("LJ_HW_VER: {}".format(self.LJ_HW_VER))
