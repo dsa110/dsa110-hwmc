@@ -1,3 +1,7 @@
+# Local testing only
+logs/
+lua-scripts/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

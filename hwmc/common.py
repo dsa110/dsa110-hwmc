@@ -14,7 +14,7 @@ class Config:
     except AttributeError:
         print("Invalid version tag.")
         VERSION = '0.0.1'
-    SIM: False
+    SIM = False
     # etcd connection details
     ETCD_ENDPOINT = "192.168.1.132:2379"
     # Lua script directory
@@ -32,13 +32,13 @@ class Config:
         print("APPLICATION: {}".format(self.APPLICATION))
         print("LOGGING_LEVEL: {}".format(self.LOGGING_LEVEL))
         print("VERSION: {}".format(self.VERSION))
-        print("sim: {}".format(self.sim))
-        print("etcd_endpoint: {}".format(self.etcd_endpoint))
-        print("lua_dir: {}".format(self.lua_dir))
-        print("lj_hw_ver: {}".format(self.lj_hw_ver))
-        print("lj_fw_ver: {}".format(self.lj_fw_ver))
-        print("lj_boot_ver: {}".format(self.lj_boot_ver))
-        print("lj_prod_id: {}".format(self.lj_prod_id))
+        print("sim: {}".format(self.SIM))
+        print("ETCD_ENDPOINT: {}".format(self.ETCD_ENDPOINT))
+        print("LUA_DIR: {}".format(self.LUA_DIR))
+        print("LJ_HW_VER: {}".format(self.LJ_HW_VER))
+        print("LJ_FW_VER: {}".format(self.LJ_FW_VER))
+        print("LJ_BOOT_VER: {}".format(self.LJ_BOOT_VER))
+        print("LJ_PROD_ID: {}".format(self.LJ_PROD_ID))
 
 
 class Const:

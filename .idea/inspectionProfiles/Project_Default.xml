@@ -35,6 +35,7 @@
         <list>
           <option value="time.now" />
           <option value="get_yaml_config" />
+          <option value="object.*" />
         </list>
       </option>
     </inspection_tool>

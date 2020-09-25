@@ -6,7 +6,9 @@
       <w>bebs</w>
       <w>bootloader</w>
       <w>cmds</w>
+      <w>crit</w>
       <w>dhcp</w>
+      <w>emerg</w>
       <w>etcd</w>
       <w>etdc</w>
       <w>fname</w>
