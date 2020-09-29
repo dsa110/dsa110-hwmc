@@ -55,7 +55,7 @@ def get_args(config_dict):
                         required=False, help="Logging priority (emerg, alert, crit, err, warning, "
                                              "notice, info, debug)")
     parser.add_argument('-s', '--sim', default=False, action='store_true', required=False,
-                        help="Run in simulation mode, which does not communicate with real"
+                        help="Run in simulation mode, which does not communicate with real "
                              "antenna monitor hardware")
     args = parser.parse_args()
     p = str(args.log_priority)
