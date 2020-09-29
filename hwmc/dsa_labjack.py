@@ -42,7 +42,9 @@ from hwmc.write_config import write_config_to_flash
 
 # Set up module-level logging.
 MODULE_NAME = __name__
-LOGGER = dsl.DsaSyslogger(CONF.SUBSYSTEM, CONF.LOGGING_LEVEL, MODULE_NAME)
+LOGGER = dsl.DsaSyslogger(subsystem_name=CONF.SUBSYSTEM,
+                          log_level=CONF.LOGGING_LEVEL,
+                          logger_name=MODULE_NAME)
 LOGGER.app(CONF.APPLICATION)
 LOGGER.version(CONF.VERSION)
 LOGGER.function('None')
@@ -92,7 +94,7 @@ class DiscoverT7:
         self.bebs = {}
 
         if sim:
-            a_connection_types, a_device_types, a_serial_numbers = self._creat_sim_devices()
+            a_connection_types, a_device_types, a_serial_numbers = self._create_sim_devices()
         else:
             a_device_types, a_connection_types, a_serial_numbers = self._find_devices()
         if self.num_found > 0:
@@ -129,7 +131,7 @@ class DiscoverT7:
                     LOGGER.info("BEB {} found".format(lj_location))
                     print("Analog backend {} found".format(lj_location))
 
-    def _creat_sim_devices(self):
+    def _create_sim_devices(self):
         """Create simulated LJ T7 interfaces.
 
         In simulate mode, connect to the LJ drivers in demo mode. Fake out some of the data.
@@ -255,7 +257,9 @@ class DsaAntLabJack:
         func = inspect.stack()[0][3]
         func_name = "{}::ant{}.{}".format(self.class_name, ant_num, func)
         logger_name = '{}_Ant{}'.format(MODULE_NAME, ant_num)
-        self.logger = dsl.DsaSyslogger(CONF.SUBSYSTEM, CONF.LOGGING_LEVEL, logger_name)
+        self.logger = dsl.DsaSyslogger(subsystem_name=CONF.SUBSYSTEM,
+                                       log_level=CONF.LOGGING_LEVEL,
+                                       logger_name=logger_name)
         self.logger.app(CONF.APPLICATION)
         self.logger.version(CONF.VERSION)
         self.logger.function(func_name)
@@ -660,7 +664,9 @@ class DsaBebLabJack:
         func = inspect.stack()[0][3]
         func_name = "{}::beb{}.{}".format(self.class_name, beb_num, func)
         logger_name = '{}_BEB{}'.format(module_name, beb_num)
-        self.logger = dsl.DsaSyslogger(CONF.SUBSYSTEM, CONF.LOGGING_LEVEL, logger_name)
+        self.logger = dsl.DsaSyslogger(subsystem_name=CONF.SUBSYSTEM,
+                                       log_level=CONF.LOGGING_LEVEL,
+                                       logger_name=logger_name)
         self.logger.app(CONF.APPLICATION)
         self.logger.version(CONF.VERSION)
         self.logger.function(func_name)
