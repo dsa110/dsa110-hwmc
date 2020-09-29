@@ -10,14 +10,16 @@ from tkinter import filedialog
 import dsautils.dsa_syslog as dsl
 from labjack import ljm
 
-from hwmc.common import Config as Conf
+from hwmc.common import Config as CONF
 
 # Set up module-level logging.
 MODULE_NAME = __name__
-LOGGER = dsl.DsaSyslogger(Conf.SUBSYSTEM, Conf.LOGGING_LEVEL, MODULE_NAME)
-LOGGER.app(Conf.APPLICATION)
-LOGGER.version(Conf.VERSION)
-LOGGER.level(Conf.LOGGING_LEVEL)
+LOGGER = dsl.DsaSyslogger(subsystem_name = CONF.SUBSYSTEM,
+                          log_level = CONF.LOGGING_LEVEL,
+                          logger_name = MODULE_NAME)
+LOGGER.app(CONF.APPLICATION)
+LOGGER.version(CONF.VERSION)
+LOGGER.level(CONF.LOGGING_LEVEL)
 LOGGER.info("{} logger created".format(MODULE_NAME))
 
 
