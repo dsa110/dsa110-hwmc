@@ -159,7 +159,7 @@ class DiscoverT7:
         func_name = "{}::{}".format(self.class_name, func)
         try:
             self.num_found, a_device_types, a_connection_types, a_serial_numbers, _ = \
-                ljm.listAll(ljm.constants.dtT7, ljm.constants.ctUSB)
+                ljm.listAll(ljm.constants.dtT7, ljm.constants.ctETHERNET)
 
         except ljm.LJMError as err:
             LOGGER.function(func_name)
