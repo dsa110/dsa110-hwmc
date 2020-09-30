@@ -1,3 +1,4 @@
+"""Unit test for the analog hardware monitor and control subsystem 'hwmc'"""
 from unittest import mock, TestCase, main
 
 import hwmc.lj_startup as su
@@ -13,8 +14,10 @@ DEVICE_NAME_DEFAULT = 'DSA Ant-1'
 
 
 class TestLjStartup(TestCase):
+    """Test the LabJack startup class"""
 
     def eReadName_side_effect(*args, **kwargs):
+        """Function to define responses to eReadName fake function"""
         if args[2] == 'IO_CONFIG_CHECK_FOR_FACTORY':
             return IO_CONFIG_CHECK_FOR_FACTORY
         elif args[2] == 'PRODUCT_ID':
@@ -35,10 +38,12 @@ class TestLjStartup(TestCase):
             return None
 
     def eReadNameByteArray_side_effect(*args, **kwargs):
+        """Fake function to simulate reading a byte array from a LabJack module"""
         if args[2] == 'DEVICE_NAME_DEFAULT':
             return DEVICE_NAME_DEFAULT.encode('ascii')
 
     def setUp(self) -> None:
+        """Set up patches to fake out LabJack functions"""
         self.patcher1 = mock.patch('labjack.ljm.eReadName',
                                    side_effect=self.eReadName_side_effect)
         self.patcher2 = mock.patch('labjack.ljm.eReadNameByteArray',
@@ -51,7 +56,7 @@ class TestLjStartup(TestCase):
         self.patcher4.start()
 
     def test_ljstartup(self, *args):
-
+        """Test the LabJack startup function with fake interfaces"""
         lj_handle = 1
         lua_required = True
         start_up_state = su.t7_startup_check(lj_handle, lua_required)
@@ -67,6 +72,7 @@ class TestLjStartup(TestCase):
         self.assertEqual(start_up_state['config_valid'], IO_CONFIG_CHECK_FOR_FACTORY)
 
     def tearDown(self) -> None:
+        """Tidy up after testing"""
         self.patcher1.stop()
         self.patcher2.stop()
         self.patcher3.stop()
@@ -75,3 +81,4 @@ class TestLjStartup(TestCase):
 
 if __name__ == '__main__':
     main()
+    """Main entry point for testing the LabJack startup function"""

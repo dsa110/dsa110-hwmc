@@ -3,7 +3,7 @@ import tkinter as tk
 
 
 class PlotItems:
-    """Create a dialog box that allows selectin of an antenna and monitor points to plot."""
+    """Create a dialog box that allows selection of an antenna and monitor points to plot."""
     def __init__(self, num_ants, mps):
         """Create a GUI for selecting monitor points to plot.
 
@@ -55,7 +55,8 @@ class PlotItems:
         dropdown2.configure(width=len2)
 
         # Add some buttons for actions
-        add_button = tk.Button(entry_frame, text="--> Add -->", width=15, command=self._add_callback)
+        add_button = tk.Button(entry_frame, text="--> Add -->", width=15,
+                               command=self._add_callback)
         add_button.grid(row=0, column=2, rowspan=3, sticky=tk.E)
         delete_button = tk.Button(entry_frame, text="Delete <--", width=15,
                                   command=self._delete_callback)

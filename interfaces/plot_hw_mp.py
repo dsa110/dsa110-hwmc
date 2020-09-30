@@ -5,9 +5,9 @@ import json
 import math
 
 import etcd3 as etcd
-import get_yaml_config
+from dsautils.dsa_functions36 import read_yaml
 import matplotlib
-import plot_items as pi
+import interfaces.plot_items as pi
 
 matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
@@ -86,6 +86,7 @@ class MpPlotter:
                             self.ax[m].plot(self.xs[m], self.ys[m])
 
     def get_mps(self):
+        """Check to see if there is are new data to plot"""
         if self.new_data is False:
             return ''
         else:
@@ -122,7 +123,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     if args.config_file is not None:
         yaml_fn = args.config_file
-        yaml_config = get_yaml_config.read_yaml(yaml_fn)
+        yaml_config = read_yaml(yaml_fn)
         for item in yaml_config:
             if item == 'etcd_endpoint':
                 plt_config[item] = yaml_config[item].split(':')
@@ -198,11 +199,10 @@ if __name__ == '__main__':
             connected = False
         if connected:
             print("Connected to 'ant-{}'".format(ant))
-        mp = ''
         if connected:
             mp_plotter = MpPlotter(num_plots, mp_plot_list, ax)
             etcd_client.add_watch_callback(etcd_mon_key, mp_plotter.mp_callback)
             ani = animation.FuncAnimation(fig, mp_plotter.update, interval=100)
-            mp_points = mp_plotter.get_mps()
+            monitor_points = mp_plotter.get_mps()
             plt.show()
     print("Finished")
