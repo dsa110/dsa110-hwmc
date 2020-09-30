@@ -54,7 +54,7 @@ MB.W(61810, 1, 4)
 local vRange = MB.R(61812, 3)
 MB.W(61810, 1, 8)
 local aOff = MB.R(61812, 3)
-zero = 90 + aOff
+local zero = 90 + aOff
 
 -- Create local names for functions.
 local checkInterval = LJ.CheckInterval

@@ -22,9 +22,9 @@ from hwmc.common import Config as CONF
 
 # Set up module-level logging.
 MODULE_NAME = __name__
-LOGGER = dsl.DsaSyslogger(subsystem_name = CONF.SUBSYSTEM,
-                          log_level = CONF.LOGGING_LEVEL,
-                          logger_name = MODULE_NAME)
+LOGGER = dsl.DsaSyslogger(subsystem_name=CONF.SUBSYSTEM,
+                          log_level=CONF.LOGGING_LEVEL,
+                          logger_name=MODULE_NAME)
 LOGGER.app(CONF.APPLICATION)
 LOGGER.version(CONF.VERSION)
 LOGGER.info("{} logger created".format(MODULE_NAME))

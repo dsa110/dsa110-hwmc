@@ -77,7 +77,7 @@ class HwmcControlPanel:
     def __init__(self, config):
         """Create a control window and populate it with monitor point displays and controls.
 
-        A tkinter winndow is created and poopulated with the appropriate widgets for displaying
+        A tkinter window is created and populated with the appropriate widgets for displaying
         monitor point values and for sending commands to the antenna control system. The
         information for the display and control widgets is taken from the monitor point
         dictionary.
@@ -142,14 +142,16 @@ class HwmcControlPanel:
         label_main.grid(row=0, column=0, columnspan=3)
         return main_frame
 
-    def _add_ant_feb_frame(self, main_frame, row, col):
+    @staticmethod
+    def _add_ant_feb_frame(main_frame, row, col):
         ant_feb_frame = tk.Frame(main_frame, relief=tk.GROOVE, bd=4)
         ant_feb_frame.grid(row=row, column=col, sticky=tk.NW + tk.SE, rowspan=2)
         label_ant_feb = tk.Label(ant_feb_frame, text=" Antenna/FEB ", font=('Arial', 12))
         label_ant_feb.grid(row=0, column=0, columnspan=2)
         return ant_feb_frame
 
-    def _add_beb_frame(self, main_frame, row, col):
+    @staticmethod
+    def _add_beb_frame(main_frame, row, col):
         beb_frame = tk.Frame(main_frame, relief=tk.GROOVE, bd=4)
         beb_frame.grid(row=row, column=col, sticky=tk.NW + tk.SE, rowspan=2)
         label_ant_feb = tk.Label(beb_frame, text=" BEB ", font=('Arial', 12))
@@ -419,9 +421,9 @@ class HwmcControlPanel:
             for mp in self.ant_mp_data:
                 mp_val = self.ant_mp_data[mp]
                 if mp in self.ant_a_fields:
-                    mp_val = "{:.3f}".format(mp_val)
+                    mp_str_val = "{:.3f}".format(mp_val)
                     self.ant_a_fields[mp].delete(1.0, tk.END)
-                    self.ant_a_fields[mp].insert(tk.END, mp_val)
+                    self.ant_a_fields[mp].insert(tk.END, mp_str_val)
                 elif mp in self.e_fields:
                     self.e_fields[mp].delete(1.0, tk.END)
                     self.e_fields[mp].insert(tk.END, self.e_enums[mp][int(mp_val)])
@@ -435,9 +437,9 @@ class HwmcControlPanel:
             for mp in self.beb_mp_data:
                 mp_val = self.beb_mp_data[mp]
                 if mp in self.beb_a_fields:
-                    mp_val = "{:.3f}".format(mp_val)
+                    mp_str_val = "{:.3f}".format(mp_val)
                     self.beb_a_fields[mp].delete(1.0, tk.END)
-                    self.beb_a_fields[mp].insert(tk.END, mp_val)
+                    self.beb_a_fields[mp].insert(tk.END, mp_str_val)
 
         self.root.update()
 
@@ -529,32 +531,35 @@ class HwmcControlPanel:
             self.etcd_send('move', el)
 
     def noise_a_on_callback(self):
-        "Switch noise source A on."
+        """Switch noise source A on."""
         if self.ant:
             self.etcd_send('noise_a_on', True)
 
     def noise_a_off_callback(self):
-        "Switch noise source A off."
+        """Switch noise source A off."""
         if self.ant:
             self.etcd_send('noise_a_on', False)
 
     def noise_b_on_callback(self):
-        "Switch noise source B on."
+        """Switch noise source B on."""
         if self.ant:
             self.etcd_send('noise_b_on', True)
 
     def noise_b_off_callback(self):
-        "Switch noise source B off."
+        """Switch noise source B off."""
         if self.ant:
             self.etcd_send('noise_b_on', False)
 
     def etcd_send(self, cmd, val):
-        """Pack the specified command and value into a JSON packet and sendit through etcd."""
+        """Pack the specified command and value into a JSON packet and send it through etcd."""
         j_pkt = json.dumps({'cmd': cmd, 'val': val})
         self.etcd.put(self.etcd_cmd_key, j_pkt)
 
 
 def main():
+    """Start up an instance of a control panel for monitoring the DSA-110 analog system through
+    the etcd key/value store
+    """
     control_panel_config = {'etcd_endpoint': '192.168.1.132:2379'
                             }
 

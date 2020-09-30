@@ -8,6 +8,7 @@
       <w>cmds</w>
       <w>crit</w>
       <w>dhcp</w>
+      <w>dsahead</w>
       <w>emerg</w>
       <w>etcd</w>
       <w>etdc</w>
@@ -15,8 +16,10 @@
       <w>hwmc</w>
       <w>inclinometer</w>
       <w>labjack</w>
+      <w>ljstartup</w>
       <w>matplotlib</w>
       <w>vals</w>
+      <w>vcmd</w>
     </words>
   </dictionary>
 </component>

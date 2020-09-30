@@ -1,5 +1,4 @@
 # DSA-110 hardware monitor and control configuration file.
-# dsamaster
 # Simulation flag (bool). True when in sim mode, False when using real hardware.
 sim: True
 # Maximum priority to log

@@ -1,5 +1,3 @@
 # DSA-110 antenna control panel configuration file.
-# dsamaster
-# Simulation flag (bool). True when in sim mode, False when using real hardware.
 # etcd connection details
 etcd_endpoint: "localhost:2379"
