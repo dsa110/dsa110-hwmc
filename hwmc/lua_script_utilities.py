@@ -4,8 +4,6 @@ import inspect
 import time
 from pathlib import Path
 from time import sleep
-from tkinter import Tk
-from tkinter import filedialog
 
 import dsautils.dsa_syslog as dsl
 from labjack import ljm
@@ -56,17 +54,7 @@ class LuaScriptUtilities:
             if check.is_file():
                 self.err = False
         self.script = lua_script_name
-        if self.err is True:
-            root = Tk()
-            root.filename = filedialog.askopenfilename(initialdir="/", title="Select file",
-                                                       filetypes=(("Lua files", "*.lua"),
-                                                                  ("all files", "*.*")))
-            check = Path(root.filename)
-            if check.is_file():
-                self.script = root.filename
-                self.err = False
-            root.destroy()
-        if self.err is True:
+        if self.err is False:
             LOGGER.info("Found Lua script '{}'".format(self.script))
         else:
             LOGGER.info("No valid Lua script found")
