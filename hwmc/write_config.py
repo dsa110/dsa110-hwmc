@@ -81,5 +81,5 @@ def write_config_to_flash(lj_handle, cal_table):
         time.sleep(2.0)
         try:
             ljm.eWriteName(lj_handle, 'LUA_RUN', 1)
-        except LJMError:
+        except ljm.LJMError:
             LOGGER.error("Failed to restart Lua script after writing config data.")
