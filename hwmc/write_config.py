@@ -79,4 +79,7 @@ def write_config_to_flash(lj_handle, cal_table):
         # Restart Lua script to pick up new values from flash
         ljm.eWriteName(lj_handle, 'LUA_RUN', 0)
         time.sleep(2.0)
-        ljm.eWriteName(lj_handle, 'LUA_RUN', 1)
+        try:
+            ljm.eWriteName(lj_handle, 'LUA_RUN', 1)
+        except LJMError:
+            LOGGER.error("Failed to restart Lua script after writing config data.")
