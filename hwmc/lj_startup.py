@@ -81,7 +81,7 @@ def t7_startup_check(lj_handle, lua_required, ant_num):
             script.save_to_flash()
             script.run_on_startup()
             script.run()
-            sleep(1)
+            time.sleep(1)
             if bool(ljm.eReadName(lj_handle, 'LUA_RUN')) is True:
                 LOGGER.critical("Success downloading script {} to ant {}".format(lua_script_name,
                                                                                 ant_num))
