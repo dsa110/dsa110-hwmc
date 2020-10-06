@@ -4,7 +4,6 @@ import inspect
 import time
 from pathlib import Path
 from time import sleep
-import os
 
 import dsautils.dsa_syslog as dsl
 from labjack import ljm
@@ -46,7 +45,6 @@ class LuaScriptUtilities:
 
         self.handle = lj_handle
         self.err = True
-        print("***** pwd: {}".format(os.getcwd()))
         check = Path(lua_script_name)
         if check.is_file():
             self.err = False

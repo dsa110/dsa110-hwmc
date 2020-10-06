@@ -8,7 +8,6 @@ import dsautils.dsa_syslog as dsl
 from hwmc.common import Config as CONF
 import hwmc.lua_script_utilities as util
 
-
 # Set up module-level logging.
 MODULE_NAME = __name__
 LOGGER = dsl.DsaSyslogger(subsystem_name=CONF.SUBSYSTEM,
@@ -30,12 +29,12 @@ def t7_startup_check(lj_handle, lua_required, ant_num):
     Args:
         lj_handle (int): Unique handle for the LabJack driver for this antenna.
         lua_required (bool): Indicates if a Lua script should be present and running.
+        ant_num (int): Number of the antenna, or first antenna on a BEB.
 
     Returns:
         start_up_state (dict): Dictionary of monitor points with the startup information acquired.
     """
     # Set up class-level logging (per class instance).
-    class_name = 'None'
     func = inspect.stack()[0][3]
     func_name = "{}::{}".format(MODULE_NAME, func)
     LOGGER.app(CONF.APPLICATION)
@@ -70,12 +69,11 @@ def t7_startup_check(lj_handle, lua_required, ant_num):
         time.sleep(2.0)
         try:
             ljm.eWriteName(lj_handle, 'LUA_RUN', 1)
-        except ljm.LJMError as e:
+        except ljm.LJMError:
             LOGGER.critical("Labjack for Ant/BEB {} cannot load script".format(ant_num))
-            print("This is e: {}".format(e))
             lua_script_name = CONF.LUA_DIR + "/antenna_control.lua"
             LOGGER.critical("Attempting to download script {} to ant {}".format(lua_script_name,
-                                                                            ant_num))
+                                                                                ant_num))
             script = util.LuaScriptUtilities(lua_script_name, lj_handle)
             script.load()
             script.save_to_flash()
@@ -84,7 +82,7 @@ def t7_startup_check(lj_handle, lua_required, ant_num):
             time.sleep(1.0)
             if bool(ljm.eReadName(lj_handle, 'LUA_RUN')) is True:
                 LOGGER.critical("Success downloading script {} to ant {}".format(lua_script_name,
-                                                                                ant_num))
+                                                                                 ant_num))
             else:
                 LOGGER.critical("Failed to download script {} to ant {}".format(lua_script_name,
                                                                                 ant_num))
