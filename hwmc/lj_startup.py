@@ -67,7 +67,7 @@ def t7_startup_check(lj_handle, lua_required, ant_num):
         try:
             ljm.eWriteName(lj_handle, 'LUA_RUN', 1)
         except ljm.LJMError as e:
-            logger.error("No script loaded in T7: {}".format(ljm.errorToString(e)))
+            print(e)
 
         time.sleep(2.0)
         start_up_state['lua_running'] = bool(ljm.eReadName(lj_handle, 'LUA_RUN'))
