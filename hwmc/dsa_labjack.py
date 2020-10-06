@@ -365,7 +365,7 @@ class DsaAntLabJack:
         ljm.eWriteName(self.lj_handle, "AIN_ALL_RANGE", 10.0)
 
         # Query LabJack for its current configuration.
-        startup_mp = sf.t7_startup_check(self.lj_handle, True)
+        startup_mp = sf.t7_startup_check(self.lj_handle, lua_required=True, ant_num=self.ant_num)
 
         # Check for inclinometer calibration constants.
         self._check_cal()
@@ -723,7 +723,7 @@ class DsaBebLabJack:
         func_name = "{}::beb{}.{}".format(self.class_name, self.beb_num, func)
         self.logger.function(func_name)
         self.logger.info("Initializing BEB {}".format(self.beb_num))
-        startup_mp = sf.t7_startup_check(self.lj_handle, False)
+        startup_mp = sf.t7_startup_check(self.lj_handle, lua_required=False, ant_num=self.beb_num)
         # Analog section
         # Input voltage range
         ljm.eWriteName(self.lj_handle, "AIN_ALL_RANGE", 10.0)

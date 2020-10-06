@@ -1,11 +1,17 @@
 """LabJack T7 start_up _check"""
 
 import time
+import inspect
 
 from labjack import ljm
+import dsautils.dsa_syslog as dsl
+from hwmc.common import Config as CONF
 
 
-def t7_startup_check(lj_handle, lua_required):
+MODULE_NAME = __name__
+
+
+def t7_startup_check(lj_handle, lua_required, ant_num):
     """Read various parameters from the LabJack T7 device.
 
     Parameters that are read from the LabJack T7 include code versions, hardware serial number, etc.
@@ -19,6 +25,21 @@ def t7_startup_check(lj_handle, lua_required):
     Returns:
         start_up_state (dict): Dictionary of monitor points with the startup information acquired.
     """
+    # Set up class-level logging (per class instance).
+    class_name = 'None'
+    func = inspect.stack()[0][3]
+    print(func)
+    func_name = "{}".format(func)
+    logger_name = '{}_Ant{}'.format(MODULE_NAME, ant_num)
+    logger = dsl.DsaSyslogger(subsystem_name=CONF.SUBSYSTEM,
+                                   log_level=CONF.LOGGING_LEVEL,
+                                   logger_name=logger_name)
+    logger.app(CONF.APPLICATION)
+    logger.version(CONF.VERSION)
+    logger.function(func_name)
+    logger.info("{} logger created".format(logger_name))
+    logger.info("Initializing")
+    logger.info("Antenna {} connected".format(ant_num))
 
     start_up_state = dict(factory=False, prod_id=-1, hw_ver=0.0, fw_ver=0.0, boot_ver=0.0, ser_no=0,
                           dev_name='', lua_running=False, lua_code_ver=-1, config_valid=True)
@@ -43,7 +64,11 @@ def t7_startup_check(lj_handle, lua_required):
         print('Lua script not running. Attempting to load and start script')
         ljm.eWriteName(lj_handle, 'LUA_LOAD_SAVED', 1)
         time.sleep(2.0)
-        ljm.eWriteName(lj_handle, 'LUA_RUN', 1)
+        try:
+            ljm.eWriteName(lj_handle, 'LUA_RUN', 1)
+        except ljm.LJMError as e:
+            logger.error("No script loaded in T7: {}".format(ljm.errorToString(e)))
+
         time.sleep(2.0)
         start_up_state['lua_running'] = bool(ljm.eReadName(lj_handle, 'LUA_RUN'))
         if start_up_state['lua_running'] is False:
