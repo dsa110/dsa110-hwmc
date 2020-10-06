@@ -2,6 +2,8 @@
 from unittest import mock, TestCase, main
 
 import hwmc.lj_startup as su
+import labjack.ljm as ljm
+import labjack.ljm.errorcodes as lje
 
 IO_CONFIG_CHECK_FOR_FACTORY = False
 PRODUCT_ID = 7
@@ -17,7 +19,11 @@ class TestLjStartup(TestCase):
     """Test the LabJack startup class"""
 
     def eReadName_side_effect(*args, **kwargs):
-        """Function to define responses to eReadName fake function"""
+        """Function to define responses to eReadName mock function"""
+        if not isinstance(args[1], int):
+            error = lje.DEVICE_NOT_FOUND
+            raise ljm.LJMError(error)
+
         if args[2] == 'IO_CONFIG_CHECK_FOR_FACTORY':
             return IO_CONFIG_CHECK_FOR_FACTORY
         elif args[2] == 'PRODUCT_ID':
@@ -38,12 +44,12 @@ class TestLjStartup(TestCase):
             return None
 
     def eReadNameByteArray_side_effect(*args, **kwargs):
-        """Fake function to simulate reading a byte array from a LabJack module"""
+        """mock function to simulate reading a byte array from a LabJack module"""
         if args[2] == 'DEVICE_NAME_DEFAULT':
             return DEVICE_NAME_DEFAULT.encode('ascii')
 
     def setUp(self) -> None:
-        """Set up patches to fake out LabJack functions"""
+        """Set up patches to mock out LabJack functions"""
         self.patcher1 = mock.patch('labjack.ljm.eReadName',
                                    side_effect=self.eReadName_side_effect)
         self.patcher2 = mock.patch('labjack.ljm.eReadNameByteArray',
@@ -56,10 +62,11 @@ class TestLjStartup(TestCase):
         self.patcher4.start()
 
     def test_ljstartup(self, *args):
-        """Test the LabJack startup function with fake interfaces"""
+        """Test the LabJack startup function with mock interfaces"""
         lj_handle = 1
         lua_required = True
-        start_up_state = su.t7_startup_check(lj_handle, lua_required)
+        ant_num=7
+        start_up_state = su.t7_startup_check(lj_handle, lua_required=lua_required, ant_num=ant_num)
         print("start_up_state['factory']: {}".format(start_up_state['factory']))
         self.assertEqual(start_up_state['factory'], IO_CONFIG_CHECK_FOR_FACTORY)
         self.assertEqual(start_up_state['prod_id'], PRODUCT_ID)
@@ -70,6 +77,11 @@ class TestLjStartup(TestCase):
         self.assertEqual(start_up_state['lua_running'], LUA_RUN)
         self.assertEqual(start_up_state['factory'], IO_CONFIG_CHECK_FOR_FACTORY)
         self.assertEqual(start_up_state['config_valid'], IO_CONFIG_CHECK_FOR_FACTORY)
+        lj_handle = 'foo'
+        start_up_state = su.t7_startup_check(lj_handle, lua_required=lua_required, ant_num=ant_num)
+        error = lje.DEVICE_NOT_FOUND
+        self.assertRaises(ljm.LJMError(error), lambda: su.lj_startup)
+
 
     def tearDown(self) -> None:
         """Tidy up after testing"""
