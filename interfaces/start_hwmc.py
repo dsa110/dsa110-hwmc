@@ -1,4 +1,4 @@
-#!python3
+#!/home/ubuntu/anaconda3/envs/casa/bin/python
 """Start the DSA-110 hardware monitor and control system.
 
 Arguments may be supplied to control how the system is configured. Type
