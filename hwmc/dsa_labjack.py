@@ -679,7 +679,6 @@ class DsaBebLabJack:
         self.etcd_valid = False
         for i in range(self.BEB_PER_LJ):
             self.etcd_mon_key.append('/mon/beb/{0:d}'.format(beb_num + i))
-            self.etcd_cnf_key.append('/cnf/beb/{0:d}'.format(beb_num + i))
         self.etcd_client = etcd.client(host=etcd_endpoint[0], port=etcd_endpoint[1])
         try:
             self.etcd_client.status()
