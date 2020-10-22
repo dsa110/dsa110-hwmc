@@ -57,6 +57,8 @@ def get_args(config_dict):
     parser.add_argument('-s', '--sim', default=False, action='store_true', required=False,
                         help="Run in simulation mode, which does not communicate with real "
                              "antenna monitor hardware")
+    parser.add_argument('-v', '--verbose', default=False, action='store_true', required=False,
+                        help="Print some progress information to console.")
     args = parser.parse_args()
     p = str(args.log_priority)
     if p not in log_priorities:
@@ -64,6 +66,7 @@ def get_args(config_dict):
     config_dict['log_priority'] = log_priorities[p]
     config_dict['etcd_endpoint'] = args.etcd_ip.split(':')
     config_dict['sim'] = args.sim
+    config_dict['verbose'] = args.verbose
     return config_dict
 
 
@@ -104,6 +107,7 @@ def store_config(config):
         config (object):
     """
     Config.SIM = config['sim']
+    Config.VERBOSE = config['verbose']
     Config.ETCD_ENDPOINT = config['etcd_endpoint']
     Config.LOGGING_LEVEL = config['log_priority']
     Config.LUA_DIR = config['lua_dir']
@@ -124,6 +128,7 @@ def main():
     """
     # Dictionary of configuration parameters for setting up hardware monitor subsystem
     hwmc_config: Dict[str, Union[bool, str, int, float]] = {'sim': False,
+                                                            'verbose': False,
                                                             'etcd_endpoint': '192.168.1.132:2379',
                                                             'log_priority': log_priorities['info'],
                                                             'lua_dir': '../lua_scripts',
@@ -145,11 +150,12 @@ def main():
     stop_proc = False
 
     while stop_proc is False:
-        resp = input("Press 's' to stop: ")
-        if resp.lower() == 's':
-            hardware_mc.stop()
-            sleep(5)
-            stop_proc = True
+        if hwmc_config['verbose'] is True:
+            resp = input("Press 's' to stop: ")
+            if resp.lower() == 's':
+                hardware_mc.stop()
+                sleep(5)
+                stop_proc = True
     print('Done\n')
 
 

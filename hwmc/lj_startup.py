@@ -7,6 +7,8 @@ from labjack import ljm
 import dsautils.dsa_syslog as dsl
 from hwmc.common import Config as CONF
 import hwmc.lua_script_utilities as util
+from hwmc.utilities import vprint as vprint
+
 
 # Set up module-level logging.
 MODULE_NAME = __name__
@@ -62,7 +64,7 @@ def t7_startup_check(lj_handle, lua_required, ant_num):
     start_up_state['dev_name'] = d_name
     start_up_state['lua_running'] = bool(ljm.eReadName(lj_handle, 'LUA_RUN'))
     if start_up_state['lua_running'] is False and lua_required is True:
-        print('Lua script not running. Attempting to load and start script')
+        vprint('Lua script not running. Attempting to load and start script')
         LOGGER.info("Labjack for Ant/BEB {} Lua script not running. Attempting to load from memory"
                     "".format(ant_num))
         ljm.eWriteName(lj_handle, 'LUA_LOAD_SAVED', 1)
@@ -96,7 +98,7 @@ def t7_startup_check(lj_handle, lua_required, ant_num):
     start_up_state['lua_code_ver'] = format(float(ljm.eReadAddress(lj_handle, 46000, 3)), '.3f')
 
     for k, val in start_up_state.items():
-        print(" --{}: {}".format(k, val))
+        vprint(" --{}: {}".format(k, val))
 
     if start_up_state['factory'] is False or start_up_state['prod_id'] != 7:
         start_up_state['config_valid'] = False

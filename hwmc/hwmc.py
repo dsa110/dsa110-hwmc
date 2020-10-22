@@ -19,6 +19,7 @@ import dsautils.dsa_syslog as dsl
 
 from hwmc import dsa_labjack as dlj
 from hwmc.common import Config as CONF
+from hwmc.utilities import vprint as vprint
 
 # Set up module-level logging.
 MODULE_NAME = __name__
@@ -64,8 +65,8 @@ class Hwmc:
         LOGGER.function(func_name)
         if self.sim is True:
             LOGGER.warning("Running in LabJack simulation mode")
-            print("==================\n Simulation mode!\n==================\n")
-            print("Running in LabJack simulation mode")
+            vprint("==================\n Simulation mode!\n==================\n")
+            vprint("Running in LabJack simulation mode")
 
         # Discover LabJack T7 devices on the network
         devices = dlj.DiscoverT7(sim=self.sim, etcd_endpoint=self.etcd_endpoint)
@@ -78,17 +79,17 @@ class Hwmc:
         LOGGER.function(func_name)
         if num_ants > 0:
             LOGGER.info("Starting {} antenna thread(s)".format(num_ants))
-            print("Starting {} antenna thread(s)".format(num_ants))
+            vprint("Starting {} antenna thread(s)".format(num_ants))
             for ant_num, ant in self.ants.items():
                 LOGGER.debug("Starting ant {} thread".format(ant_num))
                 ant_thread = Thread(target=ant.run, name='ant{}'.format(ant_num))
                 ant_thread.start()
         else:
             LOGGER.warning("No antennas detected")
-            print("No antennas detected")
+            vprint("No antennas detected")
 
         if num_bebs > 0:
-            print("Starting {} BEB thread(s)".format(num_bebs))
+            vprint("Starting {} BEB thread(s)".format(num_bebs))
             LOGGER.info("Starting {} BEB thread(s)".format(num_bebs))
             for beb_num, beb in self.bebs.items():
                 LOGGER.debug("Starting BEB {} thread".format(beb_num))
@@ -96,22 +97,22 @@ class Hwmc:
                 beb_thread.start()
         else:
             LOGGER.warning("No BEBs detected")
-            print("No BEBs detected")
+            vprint("No BEBs detected")
 
         time.sleep(5)
         thread_count = threading.activeCount()
         LOGGER.info("{} threads started".format(thread_count))
-        print("{} threads started".format(thread_count))
+        vprint("{} threads started".format(thread_count))
 
     def stop(self):
         """Send signals to stop the running LJ T7 threads"""
         func_name = inspect.stack()[0][3]
         LOGGER.function(func_name)
         LOGGER.info("Stopping antenna thread(s)")
-        print("Stopping antenna thread(s)")
+        vprint("Stopping antenna thread(s)")
         for _, ant in self.ants.items():
             ant.stop_thread()
         LOGGER.info("Stopping BEB thread(s)")
-        print("Stopping BEB thread(s)")
+        vprint("Stopping BEB thread(s)")
         for _, beb in self.bebs.items():
             beb.stop_thread()

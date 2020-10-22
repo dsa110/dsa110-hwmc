@@ -39,6 +39,7 @@ import hwmc.lua_script_utilities as lua
 from hwmc import lj_startup as sf
 from hwmc.common import Config as CONF
 from hwmc.write_config import write_config_to_flash
+from hwmc.utilities import vprint as vprint
 
 # Set up module-level logging.
 MODULE_NAME = __name__
@@ -124,12 +125,12 @@ class DiscoverT7:
                                                            etcd_endpoint, sim)
                     self.num_ant += 1
                     LOGGER.info("Antenna {} found".format(lj_location))
-                    print("Antenna {} found".format(lj_location))
+                    vprint("Antenna {} found".format(lj_location))
                 elif lj_type == Constants.BEB_TYPE:
                     self.bebs[lj_location] = DsaBebLabJack(lj_handle, lj_location, etcd_endpoint)
                     self.num_beb += 1
                     LOGGER.info("BEB {} found".format(lj_location))
-                    print("Analog backend {} found".format(lj_location))
+                    vprint("Analog backend {} found".format(lj_location))
 
     def _create_sim_devices(self):
         """Create simulated LJ T7 interfaces.
