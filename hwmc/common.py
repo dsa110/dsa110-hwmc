@@ -12,11 +12,11 @@ class Config:
     try:
         VERSION = ver.get_git_version()
     except AttributeError:
-        print("Invalid version tag.")
         VERSION = '0.0.1'
     SIM = False
+    VERBOSE = False
     # etcd connection details
-    ETCD_ENDPOINT = "192.168.1.132:2379"
+    ETCD_ENDPOINT = "etcdv3service.sas.pvt:2379"
     # Lua script directory
     LUA_DIR = './lua-scripts'
     # Code and firmware version numbers (minimum)
@@ -33,6 +33,7 @@ class Config:
         print("LOGGING_LEVEL: {}".format(self.LOGGING_LEVEL))
         print("VERSION: {}".format(self.VERSION))
         print("SIM: {}".format(self.SIM))
+        print("VERBOSE: {}".format(self.VERBOSE))
         print("ETCD_ENDPOINT: {}".format(self.ETCD_ENDPOINT))
         print("LUA_DIR: {}".format(self.LUA_DIR))
         print("LJ_HW_VER: {}".format(self.LJ_HW_VER))
