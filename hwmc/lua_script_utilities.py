@@ -9,6 +9,7 @@ import dsautils.dsa_syslog as dsl
 from labjack import ljm
 
 from hwmc.common import Config as CONF
+from hwmc.utilities import vprint as vprint
 
 # Set up module-level logging.
 MODULE_NAME = __name__
@@ -56,8 +57,10 @@ class LuaScriptUtilities:
         self.script = lua_script_name
         if self.err is False:
             LOGGER.info("Found Lua script '{}'".format(self.script))
+            vprint("Found Lua script '{}'".format(self.script))
         else:
             LOGGER.info("No valid Lua script found")
+            vprint("No valid Lua script found")
 
     def load(self):
         """Load the current Lua file into the LabJack T7.

@@ -101,7 +101,7 @@ def t7_startup_check(lj_handle, lua_required, ant_num):
         vprint(" --{}: {}".format(k, val))
         LOGGER.info("Ant-{}  {}: {}".format(ant_num, k, val))
 
-    if start_up_state['factory'] is False or start_up_state['prod_id'] != 7:
+    if start_up_state['factory'] is True or start_up_state['prod_id'] != 7:
         start_up_state['config_valid'] = False
     LOGGER.info("Logging Labjack for Ant/BEB {} startup done".format(ant_num))
     return start_up_state
