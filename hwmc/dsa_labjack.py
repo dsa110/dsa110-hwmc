@@ -534,9 +534,10 @@ class DsaAntLabJack:
         self.logger.info("Antenna {} disconnecting".format(self.ant_num))
         if self.etcd_valid:
             self.logger.info("Antenna {} closing etcd connection".format(self.ant_num))
-            self.etcd_client.close()
             if self.watch_id is not None:
                 self.etcd_client.cancel_watch(self.watch_id)
+            self.etcd_client.close()
+        time.sleep(1)
 
     def switch_noise_a(self, state):
         """Turn noise source A on or off"""
@@ -637,6 +638,7 @@ class DsaAntLabJack:
         func_name = "{}::beb{}.{}".format(self.class_name, self.ant_num, func)
         self.logger.function(func_name)
         self.logger.info("Stopping Ant {}".format(self.ant_num))
+        vprint("Stopping Ant {}".format(self.ant_num))
         self.stop = True
 
 
