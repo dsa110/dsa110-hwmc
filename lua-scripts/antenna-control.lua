@@ -1,5 +1,5 @@
 print("Starting DSA-110 antenna control script")
-local ver = 0.920
+local ver = 1.000
 print(string.format("Ver. %.3f", ver))
 
 -- Modbus registers used:
@@ -29,7 +29,7 @@ local pauseCount = 0      -- Counter for pause
 local goal = 0            -- Goal elevation angle, deg.
 local actual = 0          -- Encoder reading, deg.
 local err = 0             -- Position error
-local nAvg = 90          -- Number of encoder readings to average
+local nAvg = 90           -- Number of encoder readings to average
 local nSamp = 200         -- Number of supply voltages samples to average
 local rate = 1570.0       -- Elevation rate, ms per degree.
 local farTol = 0.8        -- Allowable error for initial stop, deg.

@@ -99,6 +99,7 @@ def t7_startup_check(lj_handle, lua_required, ant_num):
 
     for k, val in start_up_state.items():
         vprint(" --{}: {}".format(k, val))
+        LOGGER.info("Ant-{}  {}: {}".format(ant_num, k, val))
 
     if start_up_state['factory'] is False or start_up_state['prod_id'] != 7:
         start_up_state['config_valid'] = False
