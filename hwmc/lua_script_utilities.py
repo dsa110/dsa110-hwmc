@@ -89,7 +89,7 @@ class LuaScriptUtilities:
             if script[-1] != '\0':
                 script += '\0'
             script_length = len(script)
-            print(script)
+            vprint(script)
 
             # Write the size and the Lua Script to the device.
             ljm.eWriteName(self.handle, "LUA_SOURCE_SIZE", script_length)
