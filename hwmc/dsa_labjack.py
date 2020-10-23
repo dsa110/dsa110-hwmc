@@ -350,6 +350,7 @@ class DsaAntLabJack:
         func_name = "{}::{}.{}".format(self.class_name, self.ant_num, func)
         self.logger.function(func_name)
         self.logger.info("Initializing antenna")
+        vprint("Initializing antenna {}".format(self.ant_num))
 
         # Digital section
         # Input register for LabJack ID
@@ -723,6 +724,7 @@ class DsaBebLabJack:
         func_name = "{}::beb{}.{}".format(self.class_name, self.beb_num, func)
         self.logger.function(func_name)
         self.logger.info("Initializing BEB {}".format(self.beb_num))
+        vprint("Initializing BEB {}".format(self.beb_num))
         startup_mp = sf.t7_startup_check(self.lj_handle, lua_required=False, ant_num=self.beb_num)
         # Analog section
         # Input voltage range
