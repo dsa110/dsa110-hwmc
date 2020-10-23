@@ -278,9 +278,11 @@ class DsaAntLabJack:
         self.etcd_cal_key = '/cal/ant/{0:d}'.format(ant_num)
         self.etcd_cmd_all_key = '/cmd/ant/0'
         self.etcd_client = etcd.client(host=etcd_endpoint[0], port=etcd_endpoint[1])
+        self.watch_id = None
         try:
             self.etcd_client.add_watch_callback(self.etcd_cmd_key, self.cmd_callback)
-            self.etcd_client.add_watch_callback(self.etcd_cmd_all_key, self.cmd_callback)
+            self.watch_id = self.etcd_client.add_watch_callback(self.etcd_cmd_all_key,
+                                                            self.cmd_callback)
             self.etcd_valid = True
             self.logger.info("Connected to etcd store")
         except etcd.exceptions.ConnectionFailedError:
@@ -532,6 +534,8 @@ class DsaAntLabJack:
         if self.etcd_valid:
             self.logger.info("Antenna {} closing etcd connection".format(self.ant_num))
             self.etcd_client.close()
+            if self.watch_id is not None:
+                self.etcd_client.cancel_watch(self.watch_id)
 
     def switch_noise_a(self, state):
         """Turn noise source A on or off"""
@@ -628,6 +632,10 @@ class DsaAntLabJack:
 
     def stop_thread(self):
         """Set a flag to terminate the thread this object is run in."""
+        func = inspect.stack()[0][3]
+        func_name = "{}::beb{}.{}".format(self.class_name, self.ant_num, func)
+        self.logger.function(func_name)
+        self.logger.info("Stopping Ant {}".format(self.ant_num))
         self.stop = True
 
 
@@ -808,10 +816,6 @@ class DsaBebLabJack:
 
     def stop_thread(self):
         """Set a flag to stop the thread this instance is run in"""
-        func = inspect.stack()[0][3]
-        func_name = "{}::beb{}.{}".format(self.class_name, self.beb_num, func)
-        self.logger.function(func_name)
-        self.logger.info("Stopping BEB {}".format(self.beb_num))
         self.stop = True
 
 
