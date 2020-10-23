@@ -425,6 +425,7 @@ class DsaAntLabJack:
                 self.logger.info("Failed to start script")
         else:
             self.logger.info("Script {} not found".format(script_name))
+            vprint("Script '{}' not found".format(script_name))
 
     def _get_data(self):
         """Read data from LJ T7 and insert into monitor point dictionary.
