@@ -65,26 +65,28 @@ def t7_startup_check(lj_handle, lua_required, ant_num):
     start_up_state['dev_name'] = d_name
     start_up_state['lua_running'] = bool(ljm.eReadName(lj_handle, 'LUA_RUN'))
     try_load = False
-    if start_up_state['lua_running'] is False and lua_required is True:
-        vprint('Lua script not running. Attempting to load and start script')
-        LOGGER.info("Labjack for Ant/BEB {} Lua script not running. Attempting to load from memory"
-                    "".format(ant_num))
-        ljm.eWriteName(lj_handle, 'LUA_LOAD_SAVED', 1)
-        time.sleep(2.0)
-        try:
-            ljm.eWriteName(lj_handle, 'LUA_RUN', 1)
-        except ljm.LJMError:
-            LOGGER.critical("Labjack for Ant/BEB {} cannot load script from EEPROM".format(ant_num))
+    if lua_required is True:
+        if start_up_state['lua_running'] is False:
+            vprint('Lua script not running. Attempting to load and start script')
+            LOGGER.info("Labjack for Ant/BEB {} Lua script not running. "
+                        "Attempting to load from memory".format(ant_num))
+            ljm.eWriteName(lj_handle, 'LUA_LOAD_SAVED', 1)
+            time.sleep(2.0)
+            try:
+                ljm.eWriteName(lj_handle, 'LUA_RUN', 1)
+            except ljm.LJMError:
+                LOGGER.critical("Labjack for Ant/BEB {} cannot load script from EEPROM"
+                                "".format(ant_num))
+                try_load = True
+
+        if float(start_up_state['lua_code_ver']) < CONF.LUA_VER:
+            vprint('Invalid script running. Attempting to load and start new script')
+            LOGGER.info("Labjack for Ant/BEB {} Invalid Lua script. Attempting to load new"
+                        .format(ant_num))
             try_load = True
 
-    if start_up_state['lua_code_ver'] is False and lua_required is True:
-        vprint('Invalid script running. Attempting to load and start new script')
-        LOGGER.info("Labjack for Ant/BEB {} Invalid Lua script. Attempting to load new"
-                .format(ant_num))
-        try_load = True
-
     if try_load is True:
-        lua_script_name = CONF.LUA_DIR + "/antenna_control.lua"
+        lua_script_name = CONF.LUA_DIR + "/antenna-control.lua"
         LOGGER.critical("Attempting to download script {} to ant {}".format(lua_script_name,
                                                                             ant_num))
         script = util.LuaScriptUtilities(lua_script_name, lj_handle)

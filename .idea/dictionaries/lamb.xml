@@ -18,6 +18,8 @@
       <w>labjack</w>
       <w>ljstartup</w>
       <w>matplotlib</w>
+      <w>samp</w>
+      <w>sinval</w>
       <w>vals</w>
       <w>vcmd</w>
       <w>vprint</w>
