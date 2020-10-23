@@ -131,7 +131,7 @@ def main():
                                                             'verbose': False,
                                                             'etcd_endpoint': '192.168.1.132:2379',
                                                             'log_priority': log_priorities['info'],
-                                                            'lua_dir': '../lua_scripts',
+                                                            'lua_dir': '../lua-scripts',
                                                             'lj_hw_ver': 1.300,
                                                             'lj_fw_ver': 1.092,
                                                             'lj_boot_ver': 0.94,
