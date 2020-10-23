@@ -34,7 +34,7 @@ def write_config_to_flash(lj_handle, cal_table):
     starting at the beginning of the user flash memory area.
 
     Args:
-        lj_handle (int): A handle to address the T7 module, where the data are to be written.
+        lj_handle (int): A handle to address the T7 module where the data are to be written.
         cal_table (:obj:'list' of 'float'): Table of configuration values to write to flash.
 
     Raises:
