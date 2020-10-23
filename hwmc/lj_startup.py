@@ -55,6 +55,7 @@ def t7_startup_check(lj_handle, lua_required, ant_num):
     start_up_state['boot_ver'] = float(format(ljm.eReadName(lj_handle, 'BOOTLOADER_VERSION'),
                                               '.4f'))
     start_up_state['ser_no'] = int(ljm.eReadName(lj_handle, 'SERIAL_NUMBER'))
+    start_up_state['lua_code_ver'] = format(float(ljm.eReadAddress(lj_handle, 46000, 3)), '.3f')
     dev_name = bytes(ljm.eReadNameByteArray(lj_handle, 'DEVICE_NAME_DEFAULT', 49))
     d_name = ''
     for device in dev_name:
@@ -63,6 +64,7 @@ def t7_startup_check(lj_handle, lua_required, ant_num):
         d_name += chr(device)
     start_up_state['dev_name'] = d_name
     start_up_state['lua_running'] = bool(ljm.eReadName(lj_handle, 'LUA_RUN'))
+    try_load = False
     if start_up_state['lua_running'] is False and lua_required is True:
         vprint('Lua script not running. Attempting to load and start script')
         LOGGER.info("Labjack for Ant/BEB {} Lua script not running. Attempting to load from memory"
@@ -72,22 +74,31 @@ def t7_startup_check(lj_handle, lua_required, ant_num):
         try:
             ljm.eWriteName(lj_handle, 'LUA_RUN', 1)
         except ljm.LJMError:
-            LOGGER.critical("Labjack for Ant/BEB {} cannot load script".format(ant_num))
-            lua_script_name = CONF.LUA_DIR + "/antenna_control.lua"
-            LOGGER.critical("Attempting to download script {} to ant {}".format(lua_script_name,
-                                                                                ant_num))
-            script = util.LuaScriptUtilities(lua_script_name, lj_handle)
-            script.load()
-            script.save_to_flash()
-            script.run_on_startup()
-            script.run()
-            time.sleep(1.0)
-            if bool(ljm.eReadName(lj_handle, 'LUA_RUN')) is True:
-                LOGGER.critical("Success downloading script {} to ant {}".format(lua_script_name,
-                                                                                 ant_num))
-            else:
-                LOGGER.critical("Failed to download script {} to ant {}".format(lua_script_name,
-                                                                                ant_num))
+            LOGGER.critical("Labjack for Ant/BEB {} cannot load script from EEPROM".format(ant_num))
+            try_load = True
+
+    if start_up_state['lua_code_ver'] is False and lua_required is True:
+        vprint('Invalid script running. Attempting to load and start new script')
+        LOGGER.info("Labjack for Ant/BEB {} Invalid Lua script. Attempting to load new"
+                .format(ant_num))
+        try_load = True
+
+    if try_load is True:
+        lua_script_name = CONF.LUA_DIR + "/antenna_control.lua"
+        LOGGER.critical("Attempting to download script {} to ant {}".format(lua_script_name,
+                                                                            ant_num))
+        script = util.LuaScriptUtilities(lua_script_name, lj_handle)
+        script.load()
+        script.save_to_flash()
+        script.run_on_startup()
+        script.run()
+        time.sleep(1.0)
+        if bool(ljm.eReadName(lj_handle, 'LUA_RUN')) is True:
+            LOGGER.critical("Success downloading script {} to ant {}".format(lua_script_name,
+                                                                             ant_num))
+        else:
+            LOGGER.critical("Failed to download script {} to ant {}".format(lua_script_name,
+                                                                            ant_num))
 
         time.sleep(2.0)
         start_up_state['lua_running'] = bool(ljm.eReadName(lj_handle, 'LUA_RUN'))
