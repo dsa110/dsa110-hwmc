@@ -509,7 +509,8 @@ class DsaAntLabJack:
         """Convert a monitor point dictionary to JSON and send to etdc key/value store."""
         if self.etcd_valid:
             j_pkt = json.dumps(mon_data)
-            self.etcd_client.put(key, j_pkt)
+            result = self.etcd_client.put(key, j_pkt)
+            vprint(result)
 
     def run(self):
         """Run the communication code for the antenna LJ T7.
@@ -524,8 +525,6 @@ class DsaAntLabJack:
         while not self.stop:
             mon_data = self._get_data()
             self.send_to_etcd(self.etcd_mon_key, mon_data)
-            if self.ant_num == 24:
-                vprint(mon_data)
 
             t_now = time.time()
             next_time = (int(t_now / Constants.POLLING_INTERVAL) + 1) * Constants.POLLING_INTERVAL
