@@ -511,6 +511,7 @@ class DsaAntLabJack:
             j_pkt = json.dumps(mon_data)
             result = self.etcd_client.put(key, j_pkt)
             vprint("Key: {}\nResult: {}".format(key, result))
+            vprint("Value".format(mon_data, result))
 
     def run(self):
         """Run the communication code for the antenna LJ T7.
