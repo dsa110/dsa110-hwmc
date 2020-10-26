@@ -129,7 +129,8 @@ def main():
     # Dictionary of configuration parameters for setting up hardware monitor subsystem
     hwmc_config: Dict[str, Union[bool, str, int, float]] = {'sim': False,
                                                             'verbose': False,
-                                                            'etcd_endpoint': '192.168.1.132:2379',
+                                                            'etcd_endpoint':
+                                                                'etcdv3service.sas.pvt:2379',
                                                             'log_priority': log_priorities['info'],
                                                             'lua_dir': '../lua-scripts',
                                                             'lj_hw_ver': 1.300,
