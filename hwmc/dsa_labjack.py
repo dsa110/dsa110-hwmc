@@ -283,7 +283,7 @@ class DsaAntLabJack:
         try:
             self.etcd_client.add_watch_callback(self.etcd_cmd_key, self.cmd_callback)
             self.watch_id = self.etcd_client.add_watch_callback(self.etcd_cmd_all_key,
-                                                            self.cmd_callback)
+                                                                self.cmd_callback)
             self.etcd_valid = True
             self.logger.info("Connected to etcd store")
         except etcd.exceptions.ConnectionFailedError:
@@ -511,8 +511,10 @@ class DsaAntLabJack:
         if self.etcd_valid:
             j_pkt = json.dumps(mon_data)
             result = self.etcd_client.put(key, j_pkt)
-            vprint("Key: {}\nResult: {}".format(key, result))
-            vprint("Value: {}".format(mon_data, result))
+            vprint("Data: {}".format(mon_data))
+            vprint("Key: {}".format(key))
+            vprint("Value: {}".format(j_pkt))
+            vprint("Result: {}".format(result))
 
     def run(self):
         """Run the communication code for the antenna LJ T7.
