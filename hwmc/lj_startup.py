@@ -3,12 +3,12 @@
 import time
 import inspect
 
+from astropy.time import Time
 from labjack import ljm
 import dsautils.dsa_syslog as dsl
 from hwmc.common import Config as CONF
 import hwmc.lua_script_utilities as util
 from hwmc.utilities import vprint as vprint
-
 
 # Set up module-level logging.
 MODULE_NAME = __name__
@@ -44,10 +44,13 @@ def t7_startup_check(lj_handle, lua_required, ant_num):
     LOGGER.function(func_name)
     LOGGER.info("Labjack for Ant/BEB {} started".format(ant_num))
 
-    start_up_state = dict(factory=False, prod_id=-1, hw_ver=0.0, fw_ver=0.0, boot_ver=0.0, ser_no=0,
-                          dev_name='', lua_running=False, lua_code_ver=-1, config_valid=True)
+    start_up_state = dict(ant_num=0, time=0.0, factory=False, prod_id=-1, hw_ver=0.0, fw_ver=0.0,
+                          boot_ver=0.0, ser_no=0, dev_name='', lua_running=False,
+                          lua_code_ver=-1, config_valid=True)
 
     # Read relevant device information and configuration registers.
+    start_up_state['ant_num'] = ant_num
+    start_up_state['time'] = float("{:.8f}".format(Time.now().mjd))
     start_up_state['factory'] = bool(ljm.eReadName(lj_handle, 'IO_CONFIG_CHECK_FOR_FACTORY'))
     start_up_state['prod_id'] = int(ljm.eReadName(lj_handle, 'PRODUCT_ID'))
     start_up_state['hw_ver'] = float(format(ljm.eReadName(lj_handle, 'HARDWARE_VERSION'), '.4f'))
