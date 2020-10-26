@@ -278,6 +278,7 @@ class DsaAntLabJack:
         self.etcd_cal_key = '/cal/ant/{0:d}'.format(ant_num)
         self.etcd_cmd_all_key = '/cmd/ant/0'
         self.etcd_client = etcd.client(host=etcd_endpoint[0], port=etcd_endpoint[1])
+        vprint("Etcd client: {}\nPort :{}".format(etcd_endpoint[0], etcd_endpoint[1]))
         self.watch_id = None
         try:
             self.etcd_client.add_watch_callback(self.etcd_cmd_key, self.cmd_callback)
