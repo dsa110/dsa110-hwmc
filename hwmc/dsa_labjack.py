@@ -718,7 +718,7 @@ class DsaBebLabJack:
                  'pd_current_b': 0.0,
                  'beb_current_b': 0.0,
                  'if_pwr_b': 0.0,
-                 'lo_pwr': 0.0,
+                 'lo_mon': 0.0,
                  'beb_temp': 0.0,
                  'psu_voltage': 0.0,
                  'psu_current': 0.0,
@@ -776,7 +776,7 @@ class DsaBebLabJack:
                 j += 1
                 self.monitor_points[i]['if_pwr_b'] = 1000 * analog_vals[j] / 35.0 - 90.0
                 j += 1
-                self.monitor_points[i]['lo_mon'] = 1000 * analog_vals[j]
+                self.monitor_points[i]['lo_mon'] = analog_vals[j]
                 j += 1
                 self.monitor_points[i]['beb_current_a'] = 100.0 * analog_vals[j]
                 j += 1
