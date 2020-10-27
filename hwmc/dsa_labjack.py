@@ -453,7 +453,7 @@ class DsaAntLabJack:
         self.monitor_points['lna_current_b'] = 100 * a_values[7]
         self.monitor_points['rf_pwr_b'] = 28.571 * a_values[8] - 90
         self.monitor_points['laser_volts_b'] = a_values[9]
-        self.monitor_points['feb_current_b'] = 0.1000 * a_values[10]
+        self.monitor_points['feb_current_b'] = 1000 * a_values[10]
         self.monitor_points['feb_temp_b'] = 100 * a_values[11] - 50
         self.monitor_points['psu_volt'] = a_values[12]
         self.monitor_points['ant_el_raw'] = a_values[13]
