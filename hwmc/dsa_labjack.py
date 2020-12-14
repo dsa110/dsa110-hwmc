@@ -388,7 +388,9 @@ class DsaAntLabJack:
             val = self.etcd_client.get(self.etcd_cal_key)
             if val[0] is not None:
                 j_pkt = val[0].decode('utf-8')
+                print(j_pkt)
                 cal_info = json.loads(j_pkt)
+                print(cal_info)
                 cal_table = cal_info['cal_table']
                 write_config_to_flash(self.lj_handle, cal_table)
             else:
