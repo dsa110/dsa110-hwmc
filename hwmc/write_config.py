@@ -45,12 +45,14 @@ def write_config_to_flash(lj_handle, cal_table):
     # Check to see if new values are different from stored values.
     same = True
     addr = 0
+    old_table = []
     for value in cal_table:
         ljm.eWriteAddress(lj_handle, INTERNAL_FLASH_READ_POINTER, ljc.INT32, addr)
         old = ljm.eReadAddressArray(lj_handle, INTERNAL_FLASH_READ, ljc.FLOAT32, 1)[0]
+        old_table.append(old)
         # Numerical representations of new value and value in flash may not be identical.
         # Also test for NaN
-        if (old != old) or (abs(old - value) > 0.0001):
+        if (old != old) or (abs(old - value) > 0.001):
             same = False
             break
         addr = addr + 4
@@ -58,6 +60,8 @@ def write_config_to_flash(lj_handle, cal_table):
     # Write new values if they are different.
     if not same:
         LOGGER.info("Writing new inclinometer calibration values.")
+        LOGGER.info("Old values: {}".format(old_table))
+        LOGGER.info("New values: {}".format(cal_table))
         # Start by erasing flash to avoid errors.
         a_addresses = [INTERNAL_FLASH_KEY, INTERNAL_FLASH_ERASE]
         a_data_types = [ljc.INT32, ljc.INT32]
