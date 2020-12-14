@@ -54,7 +54,6 @@ def write_config_to_flash(lj_handle, cal_table):
         # Also test for NaN
         if (old != old) or (abs(old - value) > 0.001):
             same = False
-            break
         addr = addr + 4
 
     # Write new values if they are different.
