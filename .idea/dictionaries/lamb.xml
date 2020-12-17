@@ -6,6 +6,8 @@
       <w>bebs</w>
       <w>bootloader</w>
       <w>cmds</w>
+      <w>collectgarbage</w>
+      <w>cosval</w>
       <w>crit</w>
       <w>dhcp</w>
       <w>dsahead</w>
