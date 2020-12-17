@@ -376,31 +376,46 @@ class HwmcControlPanel:
 
         # Add the few controls needed for the antenna/frontend functions
         halt_button = tk.Button(cmd_frame, text="Halt", width=8, command=self.halt_callback)
-        halt_button.grid(row=1, column=2, padx=10)
+        halt_button.grid(row=1, column=1, padx=10)
         goto_button = tk.Button(cmd_frame, text="Go to -->", width=8, command=self.move_el_callback)
-        goto_button.grid(row=1, column=3, padx=10)
+        goto_button.grid(row=1, column=2, padx=10)
         noise_a_on_button = tk.Button(cmd_frame, text="Noise A on", width=8,
                                       command=self.noise_a_on_callback)
-        noise_a_on_button.grid(row=1, column=5, padx=10)
+        noise_a_on_button.grid(row=1, column=4, padx=10)
         noise_a_off_button = tk.Button(cmd_frame, text="Noise A off", width=8,
                                        command=self.noise_a_off_callback)
-        noise_a_off_button.grid(row=1, column=6, padx=10)
+        noise_a_off_button.grid(row=1, column=5, padx=10)
         noise_b_on_button = tk.Button(cmd_frame, text="Noise B on", width=8,
                                       command=self.noise_b_on_callback)
-        noise_b_on_button.grid(row=1, column=7, padx=10)
+        noise_b_on_button.grid(row=1, column=6, padx=10)
         noise_b_off_button = tk.Button(cmd_frame, text="Noise B off", width=8,
                                        command=self.noise_b_off_callback)
-        noise_b_off_button.grid(row=1, column=8, padx=10)
+        noise_b_off_button.grid(row=1, column=7, padx=10)
+        label_space = tk.Label(cmd_frame, text="")
+        label_space.grid(row=2, column=1, columnspan=9, sticky=tk.W + tk.E)
+        label_script = tk.Label(cmd_frame, text="Lua script:")
+        label_script.grid(row=3, column=1, columnspan=1, sticky=tk.W + tk.E)
+        load_script_button = tk.Button(cmd_frame, text="Load", width=8,
+                                       command=self.load_script_callback)
+        load_script_button.grid(row=3, column=2, padx=10)
 
-        # Create an entry field for antenna elevation angle
+        # Create an entry field for antenna elevation angle.
         vcmd = cmd_frame.register(self.el_validate_callback)
         self.el_field = tk.Entry(cmd_frame, width=8, justify=tk.RIGHT, validate='all',
                                  validatecommand=(vcmd, '%P'))
-        self.el_field.grid(row=1, column=4, sticky=tk.W)
+        self.el_field.grid(row=1, column=3, sticky=tk.W)
         self.el_field.insert(0, '0.0')
 
-        # Create Tkinter variable to hold requested elevation
+        # Create Tkinter variable to hold requested elevation.
         self.tk_el = tk.DoubleVar(self.root)
+
+        # Create an entry field for script name.
+        self.script_name_field = tk.Entry(cmd_frame, width=70, justify=tk.LEFT)
+        self.script_name_field.grid(row=3, column=3, columnspan=6, sticky=tk.W)
+        self.script_name_field.insert(0, 'antenna_control.lua')
+
+        # Create Tkinter variable to hold requested elevation.
+        self.tk_script = tk.StringVar(self.root)
 
     @staticmethod
     def el_validate_callback(p):
@@ -529,6 +544,13 @@ class HwmcControlPanel:
             self.tk_el = self.el_field.get()
             el = float(self.tk_el)
             self.etcd_send('move', el)
+
+    def load_script_callback(self):
+        """Load the specified Lua script."""
+        if self.ant:
+            self.tk_name = self.script_name_field.get()
+            name = self.tk_name.strip()
+            self.etcd_send('script', name)
 
     def noise_a_on_callback(self):
         """Switch noise source A on."""
