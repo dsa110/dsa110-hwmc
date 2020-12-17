@@ -1,5 +1,5 @@
 print("Starting DSA-110 antenna control script")
-local ver = 1.000
+local ver = 2.000
 print(string.format("Ver. %.3f", ver))
 
 -- Modbus registers used:
@@ -54,14 +54,13 @@ MB.W(61810, 1, 4)
 local vOff = MB.R(61812, 3)
 MB.W(61810, 1, 8)
 local aOff = MB.R(61812, 3)
-local zero = 90 + aOff
 
 -- Create local names for functions.
 local checkInterval = LJ.CheckInterval
 local mbRead = MB.R
 local mbWrite = MB.W
 local abs = math.abs
-local asin = math.asin
+local acos = math.acos
 local deg = math.deg
 
 -- Create new local functions.
@@ -92,9 +91,9 @@ do
   samples[i] = mbRead(24, 3)  -- Fill with current value so not averaging 0's
 end
 
-local gain = 2/vRange
+local gain = 1/vScale
 local function encoderRead()
-    local sinval = 0
+    local cosval = 0
     samples[cur] = mbRead(24, 3)
     cur = cur + 1
     if cur > nSamp then
@@ -108,14 +107,14 @@ local function encoderRead()
     corr = 5.0 * nSamp / vs
     rdg = corr * mbRead(7026, 3)
     mbWrite(46008, 3, rdg)
-    sinval = (rdg - vOff) * gain
-    if sinval > 1 then
-        sinval = 1
+    cosval = (rdg - vOff) * gain
+    if cosval > 1 then
+        cosval = 1
     end
-    if sinval < -1 then
-        sinval = -1
+    if cosval < -1 then
+        cosval = -1
     end
-    local angle = 180 - (deg(asin(sinval)) + zero)
+    local angle = deg(acos(cosval)) - aOff
     return angle
 end
 
