@@ -412,7 +412,7 @@ class HwmcControlPanel:
         # Create an entry field for script name.
         self.script_name_field = tk.Entry(cmd_frame, width=70, justify=tk.LEFT)
         self.script_name_field.grid(row=3, column=3, columnspan=6, sticky=tk.W)
-        self.script_name_field.insert(0, 'antenna_control.lua')
+        self.script_name_field.insert(0, 'antenna-control.lua')
 
         # Create Tkinter variable to hold requested elevation.
         self.tk_script = tk.StringVar(self.root)
