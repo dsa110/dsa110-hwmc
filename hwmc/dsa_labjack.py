@@ -513,12 +513,12 @@ class DsaAntLabJack:
                 if isinstance(args, str):
                     args = args.lower()
                 self.lj_ant_cmds[cmd_name](args)
-                self.logger.info("Executing command '{}' with argument {}".format(cmd, args))
+                self.logger.info("Executing command '{}' with argument {}".format(cmd_name, args))
             else:
                 self.lj_ant_cmds[cmd_name]()
-                self.logger.info("Executing command '{}'".format(cmd))
+                self.logger.info("Executing command '{}'".format(cmd_name))
         else:
-            self.logger.error("Unknown command received : '{}'".format(cmd))
+            self.logger.error("Unknown command received : '{}'".format(cmd_name))
 
     def cmd_callback(self, event):
         """Etcd watch callback function. Called when values of watched keys are updated.
@@ -545,10 +545,6 @@ class DsaAntLabJack:
         if self.etcd_valid:
             j_pkt = json.dumps(mon_data)
             result = self.etcd_client.put(key, j_pkt)
-            vprint("Data: {}".format(mon_data))
-            vprint("Key: {}".format(key))
-            vprint("Value: {}".format(j_pkt))
-            vprint("Result: {}".format(result))
 
     def run(self):
         """Run the communication code for the antenna LJ T7.
