@@ -49,9 +49,9 @@ local dir = 'h'
 
 -- Read config. values from flash
 MB.W(61810, 1, 0)
-local vOff = MB.R(61812, 3)
+local vScale = MB.R(61812, 3)
 MB.W(61810, 1, 4)
-local vRange = MB.R(61812, 3)
+local vOff = MB.R(61812, 3)
 MB.W(61810, 1, 8)
 local aOff = MB.R(61812, 3)
 local zero = 90 + aOff

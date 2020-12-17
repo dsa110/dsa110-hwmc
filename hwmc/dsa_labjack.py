@@ -38,8 +38,8 @@ from labjack import ljm
 import hwmc.lua_script_utilities as lua
 from hwmc import lj_startup as sf
 from hwmc.common import Config as CONF
-from hwmc.write_config import write_config_to_flash
 from hwmc.utilities import vprint as vprint
+from hwmc.write_config import write_config_to_flash
 
 # Set up module-level logging.
 MODULE_NAME = __name__
@@ -277,13 +277,26 @@ class DsaAntLabJack:
         self.etcd_cmd_key = '/cmd/ant/{0:d}'.format(ant_num)
         self.etcd_cal_key = '/cal/ant/{0:d}'.format(ant_num)
         self.etcd_cmd_all_key = '/cmd/ant/0'
+        self.etcd_cal_all_key = '/cal/ant/0'
         self.etcd_client = etcd.client(host=etcd_endpoint[0], port=etcd_endpoint[1])
         vprint("Etcd client: {}\nPort :{}".format(etcd_endpoint[0], etcd_endpoint[1]))
         self.watch_id = None
+        # Install callback function to handle commands
         try:
             self.etcd_client.add_watch_callback(self.etcd_cmd_key, self.cmd_callback)
             self.watch_id = self.etcd_client.add_watch_callback(self.etcd_cmd_all_key,
                                                                 self.cmd_callback)
+            self.etcd_valid = True
+            self.logger.info("Connected to etcd store")
+        except etcd.exceptions.ConnectionFailedError:
+            self.logger.critical("Unable to connect to etcd store")
+            self.etcd_valid = False
+        self.move_cmd = None
+        # Install callback function to handle new calibration parameters
+        try:
+            self.etcd_client.add_watch_callback(self.etcd_cal_key, self.cal_callback)
+            self.watch_id = self.etcd_client.add_watch_callback(self.etcd_cal_all_key,
+                                                                self.cal_callback)
             self.etcd_valid = True
             self.logger.info("Connected to etcd store")
         except etcd.exceptions.ConnectionFailedError:
@@ -396,6 +409,17 @@ class DsaAntLabJack:
                 self.logger.error("Unable to get inclinometer cal for Ant{}".
                                   format(self.ant_num))
 
+    def _execute_cal(self, cal_info):
+        func = self.ant_num, inspect.stack()[0][3]
+        func_name = "{}::ant{}.{}".format(self.class_name, self.ant_num, func)
+        self.logger.function(func_name)
+        if self.etcd_valid:
+            cal_table = cal_info['cal_table']
+            write_config_to_flash(self.lj_handle, cal_table)
+            self.logger.info("Updating inclinometer cal for Ant{}".format(self.ant_num))
+        else:
+            self.logger.error("Unable to get inclinometer cal for Ant{}".format(self.ant_num))
+
     def load_script(self, script_name):
         """Load a specified Lua script into the LabJack
 
@@ -505,6 +529,16 @@ class DsaAntLabJack:
         value = event.events[0].value.decode('utf-8')
         cmd_d = json.loads(value)
         self.execute_cmd(cmd_d)
+
+    def cal_callback(self, event):
+        """Etcd watch callback function. Called when values of watched keys are updated.
+
+        Args:
+            event (:obj:): Etcd event containing the key and value.
+        """
+        value = event.events[0].value.decode('utf-8')
+        cal_info = json.loads(value)
+        self._execute_cal(cal_info)
 
     def send_to_etcd(self, key, mon_data):
         """Convert a monitor point dictionary to JSON and send to etdc key/value store."""
