@@ -277,30 +277,32 @@ class DsaAntLabJack:
         self.etcd_cmd_key = '/cmd/ant/{0:d}'.format(ant_num)
         self.etcd_cal_key = '/cal/ant/{0:d}'.format(ant_num)
         self.etcd_cmd_all_key = '/cmd/ant/0'
-        self.etcd_cal_all_key = '/cal/ant/0'
         self.etcd_client = etcd.client(host=etcd_endpoint[0], port=etcd_endpoint[1])
         vprint("Etcd client: {}\nPort :{}".format(etcd_endpoint[0], etcd_endpoint[1]))
-        self.watch_id = None
+        self.cmd_watch_id = None
+        self.cmd_all_watch_id = None
         # Install callback function to handle commands
         try:
-            self.etcd_client.add_watch_callback(self.etcd_cmd_key, self.cmd_callback)
-            self.watch_id = self.etcd_client.add_watch_callback(self.etcd_cmd_all_key,
-                                                                self.cmd_callback)
+            self.cmd_watch_id = self.etcd_client.add_watch_callback(self.etcd_cmd_key,
+                                                                    self.cmd_callback)
+            self.cmd_all_watch_id = self.etcd_client.add_watch_callback(self.etcd_cmd_all_key,
+                                                                        self.cmd_callback)
             self.etcd_valid = True
-            self.logger.info("Connected to etcd store")
+            self.logger.info("Etcd command watchers installed")
         except etcd.exceptions.ConnectionFailedError:
             self.logger.critical("Unable to connect to etcd store")
             self.etcd_valid = False
         self.move_cmd = None
         # Install callback function to handle new calibration parameters
+        self.cal_watch_id = None
         try:
             self.etcd_client.add_watch_callback(self.etcd_cal_key, self.cal_callback)
-            self.watch_id = self.etcd_client.add_watch_callback(self.etcd_cal_all_key,
+            self.cal_watch_id = self.etcd_client.add_watch_callback(self.etcd_cal_key,
                                                                 self.cal_callback)
             self.etcd_valid = True
             self.logger.info("Connected to etcd store")
         except etcd.exceptions.ConnectionFailedError:
-            self.logger.critical("Unable to connect to etcd store")
+            self.logger.critical("Etcd cal watcher installed")
             self.etcd_valid = False
         self.move_cmd = None
         self.monitor_points = {'sim': self.sim,
@@ -569,8 +571,15 @@ class DsaAntLabJack:
         self.logger.info("Antenna {} disconnecting".format(self.ant_num))
         if self.etcd_valid:
             self.logger.info("Antenna {} closing etcd connection".format(self.ant_num))
-            if self.watch_id is not None:
-                self.etcd_client.cancel_watch(self.watch_id)
+            if self.cmd_watch_id is not None:
+                self.etcd_client.cancel_watch(self.cmd_watch_id)
+                self.logger.info("Antenna {}: terminating cmd callback".format(self.ant_num))
+            if self.cmd_all_watch_id is not None:
+                self.etcd_client.cancel_watch(self.cmd_all_watch_id)
+                self.logger.info("Antenna {}: terminating cmd all callback".format(self.ant_num))
+            if self.cal_watch_id is not None:
+                self.etcd_client.cancel_watch(self.cal_watch_id)
+                self.logger.info("Antenna {}: terminating cal callback".format(self.ant_num))
             self.etcd_client.close()
         time.sleep(1)
 
