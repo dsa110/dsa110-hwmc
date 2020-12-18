@@ -433,8 +433,8 @@ class DsaAntLabJack:
         func = self.ant_num, inspect.stack()[0][3]
         func_name = "{}::ant{}.{}".format(self.class_name, self.ant_num, func)
         self.logger.function(func_name)
-        if os.path.isfile(script_name) is True:
-            script = lua.LuaScriptUtilities(script_name, self.lj_handle)
+        script = lua.LuaScriptUtilities(script_name, self.lj_handle)
+        if script.err is False:
             script.load()
             self.logger.info("Saving script to flash")
             time.sleep(1.0)
