@@ -80,7 +80,12 @@ def write_config_to_flash(lj_handle, cal_table):
             ljm.eWriteAddresses(lj_handle, num_frames, a_addresses, a_data_types, a_values)
             addr = addr + 4
         # Restart Lua script to pick up new values from flash
-        ljm.eWriteName(lj_handle, 'LUA_RUN', 0)
+        # Disable a running script by writing 0 to LUA_RUN twice
+        ljm.eWriteName(lj_handle, "LUA_RUN", 0)
+        # Wait for the Lua VM to shut down (and some T7 firmware versions need a longer time to
+        # shut down than others).
+        time.sleep(0.6)
+        ljm.eWriteName(lj_handle, "LUA_RUN", 0)
         time.sleep(2.0)
         try:
             ljm.eWriteName(lj_handle, 'LUA_RUN', 1)
