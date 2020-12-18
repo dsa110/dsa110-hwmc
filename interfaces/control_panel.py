@@ -17,7 +17,7 @@ import tkinter as tk
 import etcd3 as etcd
 from dsautils.dsa_functions36 import read_yaml
 
-ROW_PAD = 20
+ROW_PAD = 15
 COL_PAD = 30
 REFRESH_SECONDS = 0.5
 
@@ -370,7 +370,11 @@ class HwmcControlPanel:
         # Set up the frame for the commands to the antennas
         cmd_frame = tk.Frame(main_frame, relief=tk.GROOVE, bd=4)
         cmd_frame.grid(row=row, column=col, columnspan=span, sticky=tk.NW + tk.SE)
-        cmd_frame.rowconfigure(0, pad=20)
+        cmd_frame.rowconfigure(0, pad=ROW_PAD)
+        cmd_frame.rowconfigure(1, pad=ROW_PAD)
+        cmd_frame.rowconfigure(2, pad=ROW_PAD)
+        cmd_frame.rowconfigure(3, pad=0)
+        cmd_frame.rowconfigure(4, pad=0)
         label_cmd = tk.Label(cmd_frame, text="Antenna/Frontend Controls")
         label_cmd.grid(row=0, column=0, columnspan=9, sticky=tk.W + tk.E)
 
@@ -391,17 +395,20 @@ class HwmcControlPanel:
         noise_b_off_button = tk.Button(cmd_frame, text="Noise B off", width=8,
                                        command=self.noise_b_off_callback)
         noise_b_off_button.grid(row=1, column=7, padx=10)
-        label_space = tk.Label(cmd_frame, text="")
-        label_space.grid(row=2, column=1, columnspan=9, sticky=tk.W + tk.E)
         label_script = tk.Label(cmd_frame, text="Lua script:")
-        label_script.grid(row=3, column=1, columnspan=1, sticky=tk.W + tk.E)
+        label_script.grid(row=2, column=1, columnspan=1, sticky=tk.E)
         load_script_button = tk.Button(cmd_frame, text="Load", width=8,
                                        command=self.load_script_callback)
-        load_script_button.grid(row=3, column=2, padx=10)
+        load_script_button.grid(row=2, column=2, padx=10)
+        label_cal = tk.Label(cmd_frame, text="El cal:")
+        label_cal.grid(row=4, column=1, columnspan=1, sticky=tk.E)
+        load_cal_button = tk.Button(cmd_frame, text="Load", width=8,
+                                       command=self.load_cal_callback)
+        load_cal_button.grid(row=4, column=2, padx=10)
 
         # Create an entry field for antenna elevation angle.
         vcmd = cmd_frame.register(self.el_validate_callback)
-        self.el_field = tk.Entry(cmd_frame, width=8, justify=tk.RIGHT, validate='all',
+        self.el_field = tk.Entry(cmd_frame, width=12, justify=tk.LEFT, validate='all',
                                  validatecommand=(vcmd, '%P'))
         self.el_field.grid(row=1, column=3, sticky=tk.W)
         self.el_field.insert(0, '0.0')
@@ -411,11 +418,33 @@ class HwmcControlPanel:
 
         # Create an entry field for script name.
         self.script_name_field = tk.Entry(cmd_frame, width=70, justify=tk.LEFT)
-        self.script_name_field.grid(row=3, column=3, columnspan=6, sticky=tk.W)
+        self.script_name_field.grid(row=2, column=3, columnspan=6, sticky=tk.W)
         self.script_name_field.insert(0, 'antenna-control.lua')
 
-        # Create Tkinter variable to hold requested elevation.
+        # Create Tkinter variable to hold script name.
         self.tk_script = tk.StringVar(self.root)
+
+        # Create entry fields for cal values.
+        label_vscale = tk.Label(cmd_frame, text="V scale, V")
+        label_vscale.grid(row=3, column=3, sticky=tk.W+tk.E)
+        self.vscale_field = tk.Entry(cmd_frame, width=8, justify=tk.CENTER)
+        self.vscale_field.grid(row=4, column=3, sticky=tk.W+tk.E)
+        self.vscale_field.insert(0, 2.0)
+        label_voff = tk.Label(cmd_frame, text="V offset, V")
+        label_voff.grid(row=3, column=4, sticky=tk.W+tk.E)
+        self.voff_field = tk.Entry(cmd_frame, width=8, justify=tk.CENTER)
+        self.voff_field.grid(row=4, column=4, sticky=tk.W+tk.E)
+        self.voff_field.insert(0, 2.5)
+        label_aoff = tk.Label(cmd_frame, text="Ang. Offset, deg")
+        label_aoff.grid(row=3, column=5, sticky=tk.W+tk.E)
+        self.aoff_field = tk.Entry(cmd_frame, width=8, justify=tk.CENTER)
+        self.aoff_field.grid(row=4, column=5, sticky=tk.W+tk.E)
+        self.aoff_field.insert(0, 0.0)
+
+        # Create Tkinter variable to hold calibration parameters.
+        self.tk_vscale = tk.DoubleVar(self.root)
+        self.tk_voff = tk.DoubleVar(self.root)
+        self.tk_aoff = tk.DoubleVar(self.root)
 
     @staticmethod
     def el_validate_callback(p):
@@ -498,6 +527,7 @@ class HwmcControlPanel:
         self.etcd_ant_key = '/mon/ant/{0:d}'.format(ant_num)
         self.etcd_beb_key = '/mon/beb/{0:d}'.format(ant_num)
         self.etcd_cmd_key = '/cmd/ant/{0:d}'.format(ant_num)
+        self.etcd_cal_key = '/cal/ant/{0:d}'.format(ant_num)
         try:
             self.etcd = etcd.client(host=self.etcd_endpoint[0], port=self.etcd_endpoint[1])
             self.etcd.add_watch_callback(self.etcd_ant_key, self.ant_mp_callback)
@@ -536,54 +566,69 @@ class HwmcControlPanel:
     def halt_callback(self):
         """Halt the antenna drive."""
         if self.ant:
-            self.etcd_send('halt', None)
+            self.etcd_cmd_send('halt', None)
 
     def move_el_callback(self):
         """Move the antenna to the position read from the front panel."""
         if self.ant:
             self.tk_el = self.el_field.get()
             el = float(self.tk_el)
-            self.etcd_send('move', el)
+            self.etcd_cmd_send('move', el)
 
     def load_script_callback(self):
         """Load the specified Lua script."""
         if self.ant:
             self.tk_name = self.script_name_field.get()
             name = self.tk_name.strip()
-            self.etcd_send('script', name)
+            self.etcd_cmd_send('script', name)
+
+    def load_cal_callback(self):
+        """Load the supplied inclinometer calibration values."""
+        if self.ant:
+            tk_vscale = self.vscale_field.get()
+            tk_voff = self.voff_field.get()
+            tk_aoff = self.aoff_field.get()
+            vscale = float(tk_vscale.strip())
+            voff = float(tk_voff.strip())
+            aoff = float(tk_aoff.strip())
+            self.etcd_cal_send('cal_table', [vscale, voff, aoff])
 
     def noise_a_on_callback(self):
         """Switch noise source A on."""
         if self.ant:
-            self.etcd_send('noise_a_on', True)
+            self.etcd_cmd_send('noise_a_on', True)
 
     def noise_a_off_callback(self):
         """Switch noise source A off."""
         if self.ant:
-            self.etcd_send('noise_a_on', False)
+            self.etcd_cmd_send('noise_a_on', False)
 
     def noise_b_on_callback(self):
         """Switch noise source B on."""
         if self.ant:
-            self.etcd_send('noise_b_on', True)
+            self.etcd_cmd_send('noise_b_on', True)
 
     def noise_b_off_callback(self):
         """Switch noise source B off."""
         if self.ant:
-            self.etcd_send('noise_b_on', False)
+            self.etcd_cmd_send('noise_b_on', False)
 
-    def etcd_send(self, cmd, val):
+    def etcd_cmd_send(self, cmd, val):
         """Pack the specified command and value into a JSON packet and send it through etcd."""
         j_pkt = json.dumps({'cmd': cmd, 'val': val})
         self.etcd.put(self.etcd_cmd_key, j_pkt)
+
+    def etcd_cal_send(self, cal, val):
+        """Pack the specified command and value into a JSON packet and send it through etcd."""
+        j_pkt = json.dumps({cal: val})
+        self.etcd.put(self.etcd_cal_key, j_pkt)
 
 
 def main():
     """Start up an instance of a control panel for monitoring the DSA-110 analog system through
     the etcd key/value store
     """
-    control_panel_config = {'etcd_endpoint': '192.168.1.132:2379'
-                            }
+    control_panel_config = {'etcd_endpoint': '192.168.1.132:2379'}
 
     parser = argparse.ArgumentParser(description="Run the DSA-110 hardware monitor and control"
                                                  "panel")
