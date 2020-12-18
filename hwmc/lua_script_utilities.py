@@ -69,7 +69,6 @@ class LuaScriptUtilities:
         # Scan until a valid name is found. Set error flag if no valid file found.
         for name in names:
             check = Path(name)
-            print("Checking {}".format(name))
             if check.is_file():
                 self.script = name
                 self.err = False

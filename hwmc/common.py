@@ -18,7 +18,7 @@ class Config:
     # etcd connection details
     ETCD_ENDPOINT = "etcdv3service.sas.pvt:2379"
     # Lua script directory
-    LUA_DIR = '../lua-scripts'
+    LUA_DIR = '~/proj/dsa110-shell/dsa110-hwmc/lua-scripts'
     # Code and firmware version numbers (minimum)
     LJ_HW_VER = 1.300
     LJ_FW_VER = 1.029
