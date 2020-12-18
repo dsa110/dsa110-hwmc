@@ -61,7 +61,7 @@ class LuaScriptUtilities:
         names = [lua_script_name,
                  lua_script_name + '.lua',
                  CONF.LUA_DIR + '/' + lua_script_name,
-                 CONF.LUA_DIR + '/' + lua_script_name,
+                 CONF.LUA_DIR + '/' + lua_script_name + '.lua',
                  ]
         self.err = True
         self.script = None
@@ -69,6 +69,7 @@ class LuaScriptUtilities:
         # Scan until a valid name is found. Set error flag if no valid file found.
         for name in names:
             check = Path(name)
+            print("Checking {}".format(name))
             if check.is_file():
                 self.script = name
                 self.err = False
