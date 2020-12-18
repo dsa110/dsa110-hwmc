@@ -23,7 +23,7 @@ class Config:
     LJ_HW_VER = 1.300
     LJ_FW_VER = 1.029
     LJ_BOOT_VER = 0.940
-    LUA_VER = 1.000
+    LUA_VER = 2.000
     # Product ID (exact match)
     LJ_PROD_ID = 7
 
