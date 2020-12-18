@@ -106,15 +106,24 @@ def store_config(config):
     Args:
         config (object):
     """
-    Config.SIM = config['sim']
-    Config.VERBOSE = config['verbose']
-    Config.ETCD_ENDPOINT = config['etcd_endpoint']
-    Config.LOGGING_LEVEL = config['log_priority']
-    Config.LUA_DIR = config['lua_dir']
-    Config.LJ_HW_VER = config['lj_hw_ver']
-    Config.LJ_FW_VER = config['lj_fw_ver']
-    Config.LJ_BOOT_VER = config['lj_boot_ver']
-    Config.LJ_PROD_ID = config['lj_prod_id']
+    if config['sim'] is not None:
+        Config.SIM = config['sim']
+    if config['verbose'] is not None:
+        Config.VERBOSE = config['verbose']
+    if config['etcd_endpoint'] is not None:
+        Config.ETCD_ENDPOINT = config['etcd_endpoint']
+    if config['log_priority'] is not None:
+        Config.LOGGING_LEVEL = config['log_priority']
+    if config['lua_dir'] is not None:
+        Config.LUA_DIR = config['lua_dir']
+    if config['lj_hw_ver'] is not None:
+        Config.LJ_HW_VER = config['lj_hw_ver']
+    if config['lj_fw_ver'] is not None:
+        Config.LJ_FW_VER = config['lj_fw_ver']
+    if config['lj_boot_ver'] is not None:
+        Config.LJ_BOOT_VER = config['lj_boot_ver']
+    if config['lj_prod_id'] is not None:
+        Config.LJ_PROD_ID = config['lj_prod_id']
 
 
 def main():
@@ -127,16 +136,15 @@ def main():
     override the default arguments.
     """
     # Dictionary of configuration parameters for setting up hardware monitor subsystem
-    hwmc_config: Dict[str, Union[bool, str, int, float]] = {'sim': False,
-                                                            'verbose': False,
-                                                            'etcd_endpoint':
-                                                                'etcdv3service.sas.pvt:2379',
-                                                            'log_priority': log_priorities['info'],
-                                                            'lua_dir': '../lua-scripts',
-                                                            'lj_hw_ver': 1.300,
-                                                            'lj_fw_ver': 1.092,
-                                                            'lj_boot_ver': 0.94,
-                                                            'lj_prod_id': 7,
+    hwmc_config: Dict[str, Union[bool, str, int, float]] = {'sim': None,
+                                                            'verbose': None,
+                                                            'etcd_endpoint': None,
+                                                            'log_priority': None,
+                                                            'lua_dir': None,
+                                                            'lj_hw_ver': None,
+                                                            'lj_fw_ver': None,
+                                                            'lj_boot_ver': None,
+                                                            'lj_prod_id': None,
                                                             'config_file': None,
                                                             }
 
