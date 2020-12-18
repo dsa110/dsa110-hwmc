@@ -44,23 +44,35 @@ class LuaScriptUtilities:
         LOGGER.function(func_name)
         LOGGER.info("Initializing Lua script class")
 
+        self.script = None
         self.handle = lj_handle
         self.err = True
-        check = Path(lua_script_name)
-        if check.is_file():
-            self.err = False
-        else:
-            lua_script_name = lua_script_name + ".lua"
-            check = Path(lua_script_name)
-            if check.is_file():
-                self.err = False
-        self.script = lua_script_name
+        self.validate_file(lua_script_name)
         if self.err is False:
             LOGGER.info("Found Lua script '{}'".format(self.script))
             vprint("Found Lua script '{}'".format(self.script))
         else:
             LOGGER.info("No valid Lua script found")
             vprint("No valid Lua script found")
+
+    def validate_file(self, lua_script_name):
+        """Verify that the file can be found with some reasonable assumptions"""
+        # options to try
+        names = [lua_script_name,
+                 lua_script_name + '.lua',
+                 CONF.LUA_DIR + '/' + lua_script_name,
+                 CONF.LUA_DIR + '/' + lua_script_name,
+                 ]
+        self.err = True
+        self.script = None
+
+        # Scan until a valid name is found. Set error flag if no valid file found.
+        for name in names:
+            check = Path(name)
+            if check.is_file():
+                self.script = name
+                self.err = False
+                pass
 
     def load(self):
         """Load the current Lua file into the LabJack T7.
