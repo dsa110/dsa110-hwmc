@@ -515,7 +515,7 @@ class DsaAntLabJack:
                 if isinstance(args, str):
                     args = args.lower()
                 self.lj_ant_cmds[cmd_name](args)
-                self.logger.info("Executing command '{}' with argument {}".format(cmd_name, args))
+                self.logger.info("Executing command '{}' with argument '{}'".format(cmd_name, args))
             else:
                 self.lj_ant_cmds[cmd_name]()
                 self.logger.info("Executing command '{}'".format(cmd_name))
