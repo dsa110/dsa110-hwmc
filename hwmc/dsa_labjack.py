@@ -13,7 +13,7 @@
             Handles the communications with the antenna Y7 modules (one per antenna).
 
         DsaBebLabJack:
-            Handles the back-end box T7's (each handling multiple antennas).
+            Handles the back-end box T7s (each handling multiple antennas).
 
         Constants:
             Collection of constants that define the configuration. These are values that
@@ -86,7 +86,7 @@ class DiscoverT7:
         func = inspect.stack()[0][3]
         func_name = "{}::{}".format(self.class_name, func)
         LOGGER.function(func_name)
-        LOGGER.info("Searching for LabJack T7's")
+        LOGGER.info("Searching for LabJack T7s")
 
         # Set up arrays to hold device information for discovered LabJack devices.
         self.num_ant = 0
@@ -173,7 +173,7 @@ class DiscoverT7:
 
         Take the byte corresponding to the DIP switch (antennas), or hard-wiring (BEBs) and split it
         into the type and number. The type is encoded in the upper bit; 0: antenna,
-        1: analog backend. The lower seven bits give the antenna number for antenna LabJack T7's,
+        1: analog backend. The lower seven bits give the antenna number for antenna LabJack T7s,
         and the antenna group (first antenna of group of ten) for the analog backends.
 
         Arguments:
@@ -221,7 +221,7 @@ class DiscoverT7:
 # -------------- LabJack antenna class ------------------
 
 class DsaAntLabJack:
-    """Class handles communications with LabJack T7's located at antennas.
+    """Class handles communications with LabJack T7s located at antennas.
 
     Functions are provided in this class for initializing an antenna object and running it. The
     antenna object handles polling the antenna monitor points and publishing them to the etcd
@@ -703,7 +703,7 @@ def _validate_num(val):
 # -------------- LabJack analog backend class ------------------
 
 class DsaBebLabJack:
-    """Class handles communications with LabJack T7's monitoring the backend boxes.
+    """Class handles communications with LabJack T7s monitoring the backend boxes.
 
     Functions are provided in this class for initializing an antenna object and running it. The
     antenna object handles polling the antenna monitor points and publishing them to the etcd
