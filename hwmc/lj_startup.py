@@ -95,7 +95,8 @@ def t7_startup_check(lj_handle, lua_required, ant_num):
 
     if try_load is True:
         lua_script_name = CONF.LUA_DIR + "antenna-control.lua"
-        LOGGER.critical("Attempting to download script {} to ant {}".format(lua_script_name, ant_num))
+        LOGGER.critical("Attempting to download script {} to ant {}".format(lua_script_name,
+                                                                            ant_num))
         script = util.LuaScriptUtilities(lua_script_name, lj_handle)
         script.load()
         script.save_to_flash()

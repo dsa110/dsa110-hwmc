@@ -154,18 +154,19 @@ while true do
 
       elseif cmd == 2 then
           --> Move to goal.
-      state = states.seek
-      t = 0
-      dt = 0.001 * timeStep
-      tol = farTol
-      timeout = 1.05 * abs(err) * rate + minTimeout
-      pauseCount = maxPause
-      if err > 0 then
-        dir = north()
-      else
-        dir = south()
+          state = states.seek
+          t = 0
+          dt = 0.001 * timeStep
+          tol = farTol
+          timeout = 1.05 * abs(err) * rate + minTimeout
+          pauseCount = maxPause
+          if err > 0 then
+            dir = north()
+          else
+            dir = south()
+          end
       end
-    end
+
     cmd = 0
     
     -- Motion state machine. 
