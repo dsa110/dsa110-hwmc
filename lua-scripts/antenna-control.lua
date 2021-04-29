@@ -54,7 +54,6 @@ MB.W(61810, 1, 4)
 local vOff = MB.R(61812, 3)
 MB.W(61810, 1, 8)
 local aOff = MB.R(61812, 3)
-print(vScale, vOff, aOff)
 
 -- Create local names for functions.
 local checkInterval = LJ.CheckInterval
@@ -129,7 +128,7 @@ mbWrite(9326, 1, nAvg)      -- Set AIN13 number of samples.
 mbWrite(10226, 3, 6000)     -- Set AIN13 scan rate.
 
 dir = halt()                -- Motor off.
-local i = 0
+
 LJ.IntervalConfig(0, timeStep)  -- Set loop interval.
 local dt = 0.000025
 local t = 0
@@ -137,9 +136,6 @@ local drive = 0
 
 while true do
   if checkInterval(0) then
-    i=i+0.0001
-    print(i)
-    mbWrite(1000, 3, i)
       -- Interval completed.
       -- Check for new command.
       cmd = mbRead(46180, 0)
@@ -158,19 +154,18 @@ while true do
 
       elseif cmd == 2 then
           --> Move to goal.
-          state = states.seek
-          t = 0
-          dt = 0.001 * timeStep
-          tol = farTol
-          timeout = 1.05 * abs(err) * rate + minTimeout
-          pauseCount = maxPause
-          if err > 0 then
-            dir = north()
-          else
-            dir = south()
-          end
+      state = states.seek
+      t = 0
+      dt = 0.001 * timeStep
+      tol = farTol
+      timeout = 1.05 * abs(err) * rate + minTimeout
+      pauseCount = maxPause
+      if err > 0 then
+        dir = north()
+      else
+        dir = south()
       end
-
+    end
     cmd = 0
     
     -- Motion state machine. 
