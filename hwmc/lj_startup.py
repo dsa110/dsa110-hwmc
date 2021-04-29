@@ -87,14 +87,9 @@ def t7_startup_check(lj_handle, lua_required, ant_num):
             LOGGER.info("Labjack for Ant/BEB {} Invalid Lua script. Attempting to load new"
                         .format(ant_num))
             try_load = True
-    else:
-        if start_up_state['lua_running'] is True:
-            ljm.eWriteName(lj_handle, 'LUA_RUN', 0)
-            ljm.eWriteName(lj_handle, 'LUA_RUN_DEFAULT', 0)
-            ljm.eWriteAddress(lj_handle, 46000, 3, 0.0)
 
     if try_load is True:
-        lua_script_name = CONF.LUA_DIR + "antenna-control.lua"
+        lua_script_name = CONF.LUA_DIR + "/antenna-control.lua"
         LOGGER.critical("Attempting to download script {} to ant {}".format(lua_script_name,
                                                                             ant_num))
         script = util.LuaScriptUtilities(lua_script_name, lj_handle)
