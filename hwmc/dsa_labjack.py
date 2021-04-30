@@ -482,7 +482,7 @@ class DsaAntLabJack:
         self.monitor_points['feb_current_b'] = 1000 * a_values[10]
         self.monitor_points['feb_temp_b'] = 100 * a_values[11] - 50
         self.monitor_points['psu_volt'] = a_values[12]
-        self.monitor_points['ant_el_raw'] = a_values[13]
+        self.monitor_points['ant_el_raw'] = a_values[19]
         self.monitor_points['lj_temp'] = a_values[14] + Const.ABS_ZERO
         dig_val = int(a_values[15])
         self.monitor_points['emergency_off'] = bool((dig_val >> 8) & 0b01)
