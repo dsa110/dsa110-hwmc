@@ -1,0 +1,162 @@
+Index: hwmc/__init__.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>\"\"\"Information for hwmc package\"\"\"\r\n\r\n__all__ = ['dsa_labjack', 'hwmc', 'lj_startup', 'lua_script_utilities']\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- hwmc/__init__.py	(revision dfa4abacabb3963a44c7b1fdffcb24728036a72c)
++++ hwmc/__init__.py	(date 1600969571591)
+@@ -1,3 +1,3 @@
+ """Information for hwmc package"""
+ 
+-__all__ = ['dsa_labjack', 'hwmc', 'lj_startup', 'lua_script_utilities']
++__all__ = ['dsa_labjack', 'hwmc', 'lj_startup', 'lua_script_utilities', 'write_config']
+Index: hwmc/common.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- hwmc/common.py	(date 1600968974144)
++++ hwmc/common.py	(date 1600968974144)
+@@ -0,0 +1,50 @@
++"""Contains constants and configuration information for the analog hardware M&C package"""
++from logging.handlers import SysLogHandler as Syslog
++
++import dsautils.version as ver
++
++
++class Config:
++    """Contains various configuration parameters required in the hwmc package"""
++    SUBSYSTEM = 'analog'
++    APPLICATION = 'hwmc'
++    LOGGING_LEVEL = Syslog.LOG_INFO
++    try:
++        VERSION = ver.get_git_version()
++    except AttributeError:
++        print("Invalid version tag.")
++        VERSION = '0.0.1'
++    sim = False
++    # etcd connection details
++    etcd_endpoint = "192.168.1.132:2379"
++    # Lua script directory
++    lua_dir = './'
++    # Code and firmware version numbers (minimum)
++    lj_hw_ver = 1.300
++    lj_fw_ver = 1.029
++    lj_boot_ver = 0.940
++    # Product ID (exact match)
++    lj_prod_id = 7
++
++    def print_config(self):
++        """Print out the current values of the variables in this store"""
++        print("SUBSYSTEM: {}".format(self.SUBSYSTEM))
++        print("APPLICATION: {}".format(self.APPLICATION))
++        print("LOGGING_LEVEL: {}".format(self.LOGGING_LEVEL))
++        print("VERSION: {}".format(self.VERSION))
++        print("sim: {}".format(self.sim))
++        print("etcd_endpoint: {}".format(self.etcd_endpoint))
++        print("lua_dir: {}".format(self.lua_dir))
++        print("lj_hw_ver: {}".format(self.lj_hw_ver))
++        print("lj_fw_ver: {}".format(self.lj_fw_ver))
++        print("lj_boot_ver: {}".format(self.lj_boot_ver))
++        print("lj_prod_id: {}".format(self.lj_prod_id))
++
++
++class Const:
++    """Contains any constants required by the hwmc package"""
++    MAX_ANTS = 127
++
++    def print_consts(self):
++        """Print out the current values of the constants in this store"""
++        print("MAX_ANTS: {}".format(self.MAX_ANTS))
+Index: hwmc/write_config.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- hwmc/write_config.py	(date 1600964045285)
++++ hwmc/write_config.py	(date 1600964045285)
+@@ -0,0 +1,80 @@
++"""Utility to allow storage of configuration parameters in LabJack T7 flash memory"""
++
++import time as time
++import dsautils.dsa_syslog as dsl
++from labjack import ljm
++from labjack.ljm import constants as ljc
++
++from hwmc.common import Config as Conf
++
++# Set up module-level logging.
++MODULE_NAME = __name__
++LOGGER = dsl.DsaSyslogger(Conf.SUBSYSTEM, Conf.LOGGING_LEVEL, MODULE_NAME)
++LOGGER.app(Conf.APPLICATION)
++LOGGER.version(Conf.VERSION)
++LOGGER.level(Conf.LOGGING_LEVEL)
++LOGGER.info("{} logger created".format(MODULE_NAME))
++
++INTERNAL_FLASH_KEY = 61800
++INTERNAL_FLASH_ERASE = 61820
++INTERNAL_FLASH_WRITE_POINTER = 61830
++INTERNAL_FLASH_WRITE = 61832
++INTERNAL_FLASH_READ_POINTER = 61810
++INTERNAL_FLASH_READ = 61812
++INTERNAL_FLASH_USER_KEY = 0x6615E336
++
++
++def write_config_to_flash(lj_handle, cal_table):
++    """Write the supplied configuration values to the LabJack T7 flash memory
++
++    This function will take a list of values and write them to the flash memory in the LabJack T7,
++    starting at the beginning of the user flash memory area.
++
++    Args:
++        lj_handle (int): A handle to address the T7 module, where the data are to be written.
++        cal_table (:obj:'list' of 'float'): Table of configuration values to write to flash.
++
++    Raises:
++        ljm.LJMError: An error occurred accessing the LabJack drivers.
++
++    """
++
++    # Check to see if new values are different from stored values.
++    same = True
++    addr = 0
++    for value in cal_table:
++        ljm.eWriteAddress(lj_handle, INTERNAL_FLASH_READ_POINTER, ljc.INT32, addr)
++        old = ljm.eReadAddressArray(lj_handle, INTERNAL_FLASH_READ, ljc.FLOAT32, 1)[0]
++        # Numerical representations of new value and value in flash may not be identical.
++        # Also test for NaN
++        if (old != old) or (abs(old - value) > 0.0001):
++            same = False
++            break
++        addr = addr + 4
++
++    # Write new values if they are different.
++    if not same:
++        LOGGER.info("Writing new inclinometer calibration values.")
++        # Start by erasing flash to avoid errors.
++        a_addresses = [INTERNAL_FLASH_KEY, INTERNAL_FLASH_ERASE]
++        a_data_types = [ljc.INT32, ljc.INT32]
++        a_values = [INTERNAL_FLASH_USER_KEY, 0]
++        num_frames = len(a_addresses)
++        ljm.eWriteAddresses(lj_handle, num_frames, a_addresses, a_data_types, a_values)
++        # Set up for writing flash
++        a_addresses = [INTERNAL_FLASH_KEY, INTERNAL_FLASH_WRITE_POINTER, INTERNAL_FLASH_WRITE]
++        a_data_types = [ljc.INT32, ljc.INT32, ljc.FLOAT32]
++        a_values = [INTERNAL_FLASH_USER_KEY, 0, 0.0]
++        num_frames = len(a_addresses)
++        # Write values one-by-one to avoid overflowing allowed packet size.
++        addr = 0
++        for value in cal_table:
++            a_values[1] = addr
++            a_values[2] = value
++            ljm.eWriteAddresses(lj_handle, num_frames, a_addresses, a_data_types, a_values)
++            addr = addr + 4
++        # Restart Lua script to pick up new values from flash
++        ljm.eWriteName(lj_handle, 'LUA_RUN', 0)
++        time.sleep(2.0)
++        ljm.eWriteName(lj_handle, 'LUA_RUN', 1)
++
+diff --git interfaces/__init__.py interfaces/__init__.py
+new file mode 100644
