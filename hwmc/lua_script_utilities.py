@@ -81,7 +81,7 @@ class LuaScriptUtilities:
         lua_version = re.split('\n', (re.split('local *ver *= *', script))[1])[0]
         return lua_version
 
-    def lua_compress(self, script_lines):
+    def lua_compress(self, script_lines, compress):
         """Remove comments and end-of-line blanks
 
         The script lines are supplied as a list of strings read from the Lua script file. Comments are removed from
@@ -91,18 +91,21 @@ class LuaScriptUtilities:
         """
         compressed_script = ''
         for line in script_lines:
-            line = line.strip()
-            new_line = re.split('--', line)[0]
-            new_line = re.split(' *$', new_line)[0]
-            if new_line != '':
-                compressed_script = compressed_script + new_line + '\n'
+            if compress is True:
+                line = line.strip()
+                new_line = re.split('--', line)[0]
+                new_line = re.split(' *$', new_line)[0]
+                if new_line != '':
+                    compressed_script = compressed_script + new_line + '\n'
+            else:
+                compressed_script = compressed_script + line + '\n'
 
         # Check for terminating '\0' and add if missing.
         if compressed_script[-1] != '\0':
             compressed_script += '\0'
         return compressed_script
 
-    def load(self):
+    def load(self, compress=True):
         """Load the current Lua file into the LabJack T7.
 
         This function halts any Lua script running in the T7 and loads the script into it."""
@@ -118,16 +121,22 @@ class LuaScriptUtilities:
             # shut down than others).
             sleep(0.6)
             ljm.eWriteName(self.handle, "LUA_RUN", 0)
+            if ljm.eReadName(self.handle, "LUA_RUN") != 0:
+                vprint("\nError stopping script")
 
             # Read in the file.
             file_handler = open(self.script, 'r')
             script_lines = file_handler.readlines()
-            script = self.lua_compress(script_lines)
+            script = self.lua_compress(script_lines, compress)
             vprint(f"New script version: {self._get_script_ver(script)}")
             vprint(format(f"Current script version: {ljm.eReadAddress(self.handle, 46000, 3):.3f}"))
             script_length = len(script)
-            vprint("\nScript:\n=======\n")
+            if compress is False:
+                vprint("\nScript (compressed):\n====================\n")
+            else:
+                vprint("\nScript (uncompressed):\n======================\n")
             vprint(script)
+            vprint(f"\nScript size: {script_length}\n")
 
             # Write the size and the Lua Script to the device.
             ljm.eWriteName(self.handle, "LUA_SOURCE_SIZE", script_length)
