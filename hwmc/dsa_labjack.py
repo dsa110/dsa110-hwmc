@@ -103,7 +103,7 @@ class DiscoverT7:
             a_device_types, a_connection_types, a_serial_numbers = self._find_devices()
             for i in range(len(a_device_types)):
                 vprint(f"Device type: {a_device_types[i]}, connection type: {a_connection_types[i]},"
-                       f" serial number, {a_serial_numbers[i]}")
+                       f" serial number: {a_serial_numbers[i]}")
         if self.num_found > 0:
             sim_ant_num = 1
             sim_beb_num = 1
