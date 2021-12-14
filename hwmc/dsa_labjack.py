@@ -445,12 +445,12 @@ class DsaAntLabJack:
         if script.err is False:
             script.load()
             self.logger.info("Saving script to flash")
-            time.sleep(1.0)
+            time.sleep(2.0)
             script.save_to_flash()
-            time.sleep(1.0)
+            time.sleep(2.0)
             self.logger.info("Configuring to run on startup")
             script.run_on_startup()
-            time.sleep(1.0)
+            time.sleep(2.0)
             self.logger.info("Starting script")
             if script.run(debug=False) is True:
                 self.logger.info("Script started OK")
