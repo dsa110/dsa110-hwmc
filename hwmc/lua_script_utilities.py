@@ -4,6 +4,7 @@ import inspect
 import time
 from pathlib import Path
 from time import sleep
+import re
 
 import dsautils.dsa_syslog as dsl
 from labjack import ljm
@@ -75,6 +76,11 @@ class LuaScriptUtilities:
                 self.err = False
                 break
 
+    def _get_script_ver(self, script):
+        # Assume that the name of the version variable is always the same.
+        lua_version = re.split('\n', (re.split('local *ver *= *', script))[1])[0]
+        return lua_version
+
     def load(self):
         """Load the current Lua file into the LabJack T7.
 
@@ -97,7 +103,8 @@ class LuaScriptUtilities:
             lines = file_handler.readlines()
             script = ''
             script = script.join(lines)
-
+            vprint(f"New script version: {self._get_script_ver(script)}")
+            vprint(format(f"Current script version: {ljm.eReadAddress(self.handle, 46000, 3):.3f}"))
             # Check for terminating '\0' and add if missing.
             if script[-1] != '\0':
                 script += '\0'
