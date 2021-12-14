@@ -81,6 +81,27 @@ class LuaScriptUtilities:
         lua_version = re.split('\n', (re.split('local *ver *= *', script))[1])[0]
         return lua_version
 
+    def lua_compress(self, script_lines):
+        """Remove comments and end-of-line blanks
+
+        The script lines are supplied as a list of strings read from the Lua script file. Comments are removed from
+        where they are present (comments are denoted by a leading '--'). Blank lines are deleted, and the remaining
+        lines concatenated (including the newline character). A '\0' termination at the end of the concatenated string
+        is added if it is not present.
+        """
+        compressed_script = ''
+        for line in script_lines:
+            line = line.strip()
+            new_line = re.split('--', line)[0]
+            new_line = re.split(' *$', new_line)[0]
+            if new_line != '':
+                compressed_script = compressed_script + new_line + '\n'
+
+        # Check for terminating '\0' and add if missing.
+        if compressed_script[-1] != '\0':
+            compressed_script += '\0'
+        return compressed_script
+
     def load(self):
         """Load the current Lua file into the LabJack T7.
 
@@ -100,14 +121,10 @@ class LuaScriptUtilities:
 
             # Read in the file.
             file_handler = open(self.script, 'r')
-            lines = file_handler.readlines()
-            script = ''
-            script = script.join(lines)
+            script_lines = file_handler.readlines()
+            script = self.lua_compress(script_lines)
             vprint(f"New script version: {self._get_script_ver(script)}")
             vprint(format(f"Current script version: {ljm.eReadAddress(self.handle, 46000, 3):.3f}"))
-            # Check for terminating '\0' and add if missing.
-            if script[-1] != '\0':
-                script += '\0'
             script_length = len(script)
             vprint("\nScript:\n=======\n")
             vprint(script)
