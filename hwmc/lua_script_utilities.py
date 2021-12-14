@@ -109,6 +109,7 @@ class LuaScriptUtilities:
             if script[-1] != '\0':
                 script += '\0'
             script_length = len(script)
+            vprint("\nScript:\n=======\n")
             vprint(script)
 
             # Write the size and the Lua Script to the device.
