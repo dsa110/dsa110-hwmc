@@ -98,7 +98,7 @@ class LuaScriptUtilities:
                 if new_line != '':
                     compressed_script = compressed_script + new_line + '\n'
             else:
-                compressed_script = compressed_script + line + '\n'
+                compressed_script = compressed_script + line
 
         # Check for terminating '\0' and add if missing.
         if compressed_script[-1] != '\0':
