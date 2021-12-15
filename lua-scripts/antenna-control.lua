@@ -1,5 +1,5 @@
 print("Starting DSA-110 antenna control script")
-local ver = 2.001
+local ver = 3.000
 print(string.format("Ver. %.3f", ver))
 
 -- Modbus registers used:
