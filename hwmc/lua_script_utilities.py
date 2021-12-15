@@ -131,7 +131,7 @@ class LuaScriptUtilities:
             vprint(f"New script version: {self._get_script_ver(script)}")
             vprint(format(f"Current script version: {ljm.eReadAddress(self.handle, 46000, 3):.3f}"))
             script_length = len(script)
-            if compress is False:
+            if compress is True:
                 vprint("\nScript (compressed):\n====================\n")
             else:
                 vprint("\nScript (uncompressed):\n======================\n")
