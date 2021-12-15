@@ -443,7 +443,7 @@ class DsaAntLabJack:
         self.logger.function(func_name)
         script = lua.LuaScriptUtilities(script_name, self.lj_handle)
         if script.err is False:
-            script.load(compress = False)
+            script.load(compress = True)
             self.logger.info("Saving script to flash")
             time.sleep(1.0)
             script.save_to_flash()
