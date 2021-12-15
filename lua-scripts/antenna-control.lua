@@ -56,6 +56,15 @@ MB.W(61810, 1, 8)
 local aOff = MB.R(61812, 3)
 MB.W(61810, 1, 10)
 local collim = MB.R(61812, 3)
+local angOff = aOff + collim
+
+-- Check for 'bad' (initialized) values
+
+if (math.abs(vScale - 2.0) > 0.1) or (math.abs(vOff - 2.5) > 0.1) then
+    vScale = 2.0
+    vOff = 2.5
+    angOff = 0.0
+end
 
 -- Create local names for functions.
 local checkInterval = LJ.CheckInterval
@@ -116,7 +125,7 @@ local function encoderRead()
     if cosval < -1 then
         cosval = -1
     end
-    local angle = deg(acos(cosval)) - aOff - collim
+    local angle = deg(acos(cosval)) - angOff
     return angle
 end
 
