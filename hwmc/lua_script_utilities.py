@@ -90,15 +90,15 @@ class LuaScriptUtilities:
         is added if it is not present.
         """
         compressed_script = ''
-        for line in script_lines:
-            if compress is True:
+        if compress is True:
+            for line in script_lines:
                 line = line.strip()
                 new_line = re.split('--', line)[0]
                 new_line = re.split(' *$', new_line)[0]
                 if new_line != '':
-                    compressed_script = compressed_script + new_line + '\n'
-            else:
-                compressed_script = compressed_script + line
+                    compressed_script = compressed_script.join([new_line, '\n'])
+        else:
+            compressed_script = compressed_script.join(script_lines)
 
         # Check for terminating '\0' and add if missing.
         if compressed_script[-1] != '\0':
