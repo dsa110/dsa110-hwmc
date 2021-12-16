@@ -97,6 +97,7 @@ class LuaScriptUtilities:
                 new_line = re.split(' *$', new_line)[0]
                 if new_line != '':
                     compressed_script = compressed_script.join([new_line, '\n'])
+                    print(compressed_script)
         else:
             compressed_script = compressed_script.join(script_lines)
 
