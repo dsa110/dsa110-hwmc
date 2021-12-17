@@ -1,5 +1,5 @@
 print("Starting DSA-110 antenna control script")
-local ver = 2.000
+local ver = 3.001
 print(string.format("Ver. %.3f", ver))
 
 -- NOTE: Treat as binary in Git since newline must use Windows convention
@@ -57,7 +57,7 @@ MB.W(61810, 1, 8)
 local aOff = MB.R(61812, 3)
 MB.W(61810, 1, 10)
 local collim = MB.R(61812, 3)
-local angOff = aOff + collim
+local angOff = aOff
 
 -- Check for 'bad' (initialized) values
 
