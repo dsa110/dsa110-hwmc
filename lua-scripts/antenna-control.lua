@@ -2,6 +2,7 @@ print("Starting DSA-110 antenna control script")
 local ver = 2.000
 print(string.format("Ver. %.3f", ver))
 
+-- NOTE: Treat as binary in Git since newline must use Windows convention
 -- Modbus registers used:
 --
 -- 02009: bit to turn drive on for north motion.
