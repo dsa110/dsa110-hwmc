@@ -55,7 +55,7 @@ MB.W(61810, 1, 4)
 local vOff = MB.R(61812, 3)
 MB.W(61810, 1, 8)
 local aOff = MB.R(61812, 3)
-MB.W(61810, 1, 10)
+MB.W(61810, 1, 12)
 local collim = MB.R(61812, 3)
 local angOff = aOff
 
