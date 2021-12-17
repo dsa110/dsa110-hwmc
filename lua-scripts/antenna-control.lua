@@ -127,7 +127,8 @@ local function encoderRead()
         cosval = -1
     end
     local angle = deg(acos(cosval)) - angOff
-    return angle
+--    return angle
+    return collim
 end
 
 mbWrite(46000, 3, ver)      -- Write code version number into register.
