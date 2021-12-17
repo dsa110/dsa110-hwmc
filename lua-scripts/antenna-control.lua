@@ -57,7 +57,7 @@ MB.W(61810, 1, 8)
 local aOff = MB.R(61812, 3)
 MB.W(61810, 1, 12)
 local collim = MB.R(61812, 3)
-local angOff = aOff
+local angOff = aOff + collim
 
 -- Check for 'bad' (initialized) values
 
@@ -127,8 +127,7 @@ local function encoderRead()
         cosval = -1
     end
     local angle = deg(acos(cosval)) - angOff
---    return angle
-    return collim
+    return angle
 end
 
 mbWrite(46000, 3, ver)      -- Write code version number into register.
