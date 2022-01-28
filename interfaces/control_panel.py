@@ -15,7 +15,7 @@ import time
 import tkinter as tk
 
 import etcd3 as etcd
-from hwmc import get_yaml_config
+import dsautils.dsa_functions36 as util
 
 ROW_PAD = 20
 COL_PAD = 30
@@ -567,7 +567,7 @@ def main():
     args = parser.parse_args()
     if args.config_file is not None:
         yaml_fn = args.config_file
-        yaml_config = get_yaml_config.read_yaml(yaml_fn)
+        yaml_config = util.read_yaml(yaml_fn)
         for item in yaml_config:
             if item == 'etcd_endpoint':
                 cpl_config[item] = yaml_config[item].split(':')
