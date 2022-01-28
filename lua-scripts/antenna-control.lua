@@ -1,7 +1,8 @@
 print("Starting DSA-110 antenna control script")
-local ver = 0.900
+local ver = 3.001
 print(string.format("Ver. %.3f", ver))
 
+-- NOTE: Treat as binary in Git since newline must use Windows convention
 -- Modbus registers used:
 --
 -- 02009: bit to turn drive on for north motion.
@@ -17,6 +18,10 @@ print(string.format("Ver. %.3f", ver))
 -- 46006: error, deg.
 -- 46008: averaged normalised raw inclinometer reading, V.
 
+-- Immediately make sure digital outputs are in a safe state
+MB.W(2601, 0, 30)        -- Set EIO digital to outputs as required.
+MB.W(2501, 0, 24)        -- Set drive and noise diode initial states (off).
+
 -- Create required local variables.
 
 local timeStep = 25       -- Time step of the loop, ms.
@@ -25,7 +30,7 @@ local pauseCount = 0      -- Counter for pause
 local goal = 0            -- Goal elevation angle, deg.
 local actual = 0          -- Encoder reading, deg.
 local err = 0             -- Position error
-local nAvg = 90          -- Number of encoder readings to average
+local nAvg = 90           -- Number of encoder readings to average
 local nSamp = 200         -- Number of supply voltages samples to average
 local rate = 1570.0       -- Elevation rate, ms per degree.
 local farTol = 0.8        -- Allowable error for initial stop, deg.
@@ -43,26 +48,32 @@ local state = states.halt
 local cmd = 0
 local dir = 'h'
 
--- Read config. values from flash
+-- Read inclinometer calibration values from flash
 MB.W(61810, 1, 0)
-local vOff = MB.R(61812, 3)
+local vScale = MB.R(61812, 3)
 MB.W(61810, 1, 4)
-local vRange = MB.R(61812, 3)
+local vOff = MB.R(61812, 3)
 MB.W(61810, 1, 8)
 local aOff = MB.R(61812, 3)
-zero = 90 + aOff
+MB.W(61810, 1, 12)
+local collim = MB.R(61812, 3)
+local angOff = aOff + collim
+
+-- Check for 'bad' (initialized) values
+
+if (math.abs(vScale - 2.0) > 0.1) or (math.abs(vOff - 2.5) > 0.1) then
+    vScale = 2.0
+    vOff = 2.5
+    angOff = 0.0
+end
 
 -- Create local names for functions.
 local checkInterval = LJ.CheckInterval
 local mbRead = MB.R
 local mbWrite = MB.W
 local abs = math.abs
-local asin = math.asin
+local acos = math.acos
 local deg = math.deg
-local getTick = LJ.Tick
-local lastTick
-local nowTick
-local format = string.format
 
 -- Create new local functions.
 local function halt()
@@ -92,27 +103,31 @@ do
   samples[i] = mbRead(24, 3)  -- Fill with current value so not averaging 0's
 end
 
-local gain = 2/vRange
+local gain = 1/vScale
 local function encoderRead()
-  local sinval = 0
-  samples[cur] = mbRead(24, 3)
-  cur = cur + 1
-  if cur > nSamp then
-    cur = 1
-  end
-  local vs = 0
-  for i = 1, nSamp, 1
-  do
-    vs = vs + samples[i]
-  end
-  corr = 5.0 * nSamp/vs
-  rdg = corr * mbRead(7026, 3)
-  mbWrite(46008, 3, rdg)
-  sinval = (rdg - vOff)*gain
-  if sinval > 1 then sinval = 1 end
-  if sinval < -1 then sinval = -1 end
-  local angle = deg(asin(sinval)) + zero
-  return angle
+    local cosval = 0
+    samples[cur] = mbRead(24, 3)
+    cur = cur + 1
+    if cur > nSamp then
+        cur = 1
+    end
+    local vs = 0
+    for i = 1, nSamp, 1
+    do
+        vs = vs + samples[i]
+    end
+    corr = 5.0 * nSamp / vs
+    rdg = corr * mbRead(7026, 3)
+    mbWrite(46008, 3, rdg)
+    cosval = (rdg - vOff) * gain
+    if cosval > 1 then
+        cosval = 1
+    end
+    if cosval < -1 then
+        cosval = -1
+    end
+    local angle = deg(acos(cosval)) - angOff
+    return angle
 end
 
 mbWrite(46000, 3, ver)      -- Write code version number into register.
@@ -121,7 +136,7 @@ mbWrite(2601, 0, 30)        -- Set EIO digital to outputs as required.
 mbWrite(2501, 0, 24)        -- Set drive and noise diode initial states (off).
 mbWrite(46180, 0, 0)        -- Make sure no command is active.
 mbWrite(9026, 1, 3)         -- Set AIN13 to min, max, average.
-mbWrite(9326, 1, nAvg)        -- Set AIN13 number of samples.
+mbWrite(9326, 1, nAvg)      -- Set AIN13 number of samples.
 mbWrite(10226, 3, 6000)     -- Set AIN13 scan rate.
 
 dir = halt()                -- Motor off.
@@ -130,37 +145,40 @@ LJ.IntervalConfig(0, timeStep)  -- Set loop interval.
 local dt = 0.000025
 local t = 0
 local drive = 0
-local count = 40
 
 while true do
-  if checkInterval(0) then  -- Interval completed.
-    -- Check for new command.
-    cmd = mbRead(46180, 0)
-    mbWrite(46180, 0, 0)
-    goal = mbRead(46002, 3)
-    actual = encoderRead()
-    err = goal - actual
-    mbWrite(46004, 3, actual)
-    mbWrite(46006, 3, err)
- 
-    -- If new command, execute it.
-    if cmd == 1 then --> Halt motor.
-      state = states.halt
-      dir = halt()
+  if checkInterval(0) then
+      -- Interval completed.
+      -- Check for new command.
+      cmd = mbRead(46180, 0)
+      mbWrite(46180, 0, 0)
+      goal = mbRead(46002, 3)
+      actual = encoderRead()
+      err = goal - actual
+      mbWrite(46004, 3, actual)
+      mbWrite(46006, 3, err)
 
-    elseif cmd == 2 then  --> Move to goal.
-      state = states.seek
-      t = 0
-      dt = 0.001 * timeStep
-      tol = farTol
-      timeout = 1.05 * abs(err) * rate + minTimeout
-      pauseCount = maxPause
-      if err > 0 then
-        dir = north()
-      else
-        dir = south()
+      -- If new command, execute it.
+      if cmd == 1 then
+          --> Halt motor.
+          state = states.halt
+          dir = halt()
+
+      elseif cmd == 2 then
+          --> Move to goal.
+          state = states.seek
+          t = 0
+          dt = 0.001 * timeStep
+          tol = farTol
+          timeout = 1.05 * abs(err) * rate + minTimeout
+          pauseCount = maxPause
+          if err > 0 then
+            dir = north()
+          else
+            dir = south()
+          end
       end
-    end
+
     cmd = 0
     
     -- Motion state machine. 

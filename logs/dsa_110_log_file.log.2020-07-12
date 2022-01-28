@@ -1,1 +1,0 @@
-{"mjd": 59043.11136979709, "level": "INFO", "subsystem": "HWMC", "app_name": "hwmc.hwmc.dsa_labjack", "app_ver": "0.0", "class": "dsa_labjack.DiscoverT7", "func_name": "__init__", "thread": "MainThread", "msg": "Searching for LabJack T7's"}

@@ -10,7 +10,9 @@ from hwmc.common import Config as CONF
 
 # Set up module-level logging.
 MODULE_NAME = __name__
-LOGGER = dsl.DsaSyslogger(CONF.SUBSYSTEM, CONF.LOGGING_LEVEL, MODULE_NAME)
+LOGGER = dsl.DsaSyslogger(subsystem_name=CONF.SUBSYSTEM,
+                          log_level=CONF.LOGGING_LEVEL,
+                          logger_name=MODULE_NAME)
 LOGGER.app(CONF.APPLICATION)
 LOGGER.version(CONF.VERSION)
 LOGGER.level(CONF.LOGGING_LEVEL)
@@ -32,7 +34,7 @@ def write_config_to_flash(lj_handle, cal_table):
     starting at the beginning of the user flash memory area.
 
     Args:
-        lj_handle (int): A handle to address the T7 module, where the data are to be written.
+        lj_handle (int): A handle to address the T7 module where the data are to be written.
         cal_table (:obj:'list' of 'float'): Table of configuration values to write to flash.
 
     Raises:
@@ -43,19 +45,22 @@ def write_config_to_flash(lj_handle, cal_table):
     # Check to see if new values are different from stored values.
     same = True
     addr = 0
+    old_table = []
     for value in cal_table:
         ljm.eWriteAddress(lj_handle, INTERNAL_FLASH_READ_POINTER, ljc.INT32, addr)
         old = ljm.eReadAddressArray(lj_handle, INTERNAL_FLASH_READ, ljc.FLOAT32, 1)[0]
+        old_table.append(old)
         # Numerical representations of new value and value in flash may not be identical.
         # Also test for NaN
-        if (old != old) or (abs(old - value) > 0.0001):
+        if (old != old) or (abs(old - value) > 0.001):
             same = False
-            break
         addr = addr + 4
 
     # Write new values if they are different.
     if not same:
         LOGGER.info("Writing new inclinometer calibration values.")
+        LOGGER.info("Old values: {}".format(old_table))
+        LOGGER.info("New values: {}".format(cal_table))
         # Start by erasing flash to avoid errors.
         a_addresses = [INTERNAL_FLASH_KEY, INTERNAL_FLASH_ERASE]
         a_data_types = [ljc.INT32, ljc.INT32]
@@ -74,7 +79,21 @@ def write_config_to_flash(lj_handle, cal_table):
             a_values[2] = value
             ljm.eWriteAddresses(lj_handle, num_frames, a_addresses, a_data_types, a_values)
             addr = addr + 4
+        time.sleep(1.0)
         # Restart Lua script to pick up new values from flash
-        ljm.eWriteName(lj_handle, 'LUA_RUN', 0)
+        # Disable a running script by writing 0 to LUA_RUN twice
+        ljm.eWriteName(lj_handle, "LUA_RUN", 0)
+        # Wait for the Lua VM to shut down (and some T7 firmware versions need a longer time to
+        # shut down than others).
+        time.sleep(1.0)
+        ljm.eWriteName(lj_handle, "LUA_RUN", 0)
         time.sleep(2.0)
-        ljm.eWriteName(lj_handle, 'LUA_RUN', 1)
+        try:
+            ljm.eWriteName(lj_handle, 'LUA_LOAD_SAVED', 1)
+            time.sleep(2.0)
+            ljm.eWriteName(lj_handle, 'LUA_RUN', 1)
+            time.sleep(1.0)
+            if ljm.eReadName(lj_handle, 'LUA_RUN') != 1:
+                LOGGER.error("Failed to restart Lua script after writing config data.")
+        except ljm.LJMError:
+            LOGGER.error("Failed to restart Lua script after writing config data.")

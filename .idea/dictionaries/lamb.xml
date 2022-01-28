@@ -6,15 +6,25 @@
       <w>bebs</w>
       <w>bootloader</w>
       <w>cmds</w>
+      <w>collectgarbage</w>
+      <w>cosval</w>
+      <w>crit</w>
       <w>dhcp</w>
+      <w>dsahead</w>
+      <w>emerg</w>
       <w>etcd</w>
       <w>etdc</w>
       <w>fname</w>
       <w>hwmc</w>
       <w>inclinometer</w>
       <w>labjack</w>
+      <w>ljstartup</w>
       <w>matplotlib</w>
+      <w>samp</w>
+      <w>sinval</w>
       <w>vals</w>
+      <w>vcmd</w>
+      <w>vprint</w>
     </words>
   </dictionary>
 </component>

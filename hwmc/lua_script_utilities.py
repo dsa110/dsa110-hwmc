@@ -4,20 +4,22 @@ import inspect
 import time
 from pathlib import Path
 from time import sleep
-from tkinter import Tk
-from tkinter import filedialog
+import re
 
 import dsautils.dsa_syslog as dsl
 from labjack import ljm
 
-from hwmc.common import Config as Conf
+from hwmc.common import Config as CONF
+from hwmc.utilities import vprint as vprint
 
 # Set up module-level logging.
 MODULE_NAME = __name__
-LOGGER = dsl.DsaSyslogger(Conf.SUBSYSTEM, Conf.LOGGING_LEVEL, MODULE_NAME)
-LOGGER.app(Conf.APPLICATION)
-LOGGER.version(Conf.VERSION)
-LOGGER.level(Conf.LOGGING_LEVEL)
+LOGGER = dsl.DsaSyslogger(subsystem_name=CONF.SUBSYSTEM,
+                          log_level=CONF.LOGGING_LEVEL,
+                          logger_name=MODULE_NAME)
+LOGGER.app(CONF.APPLICATION)
+LOGGER.version(CONF.VERSION)
+LOGGER.level(CONF.LOGGING_LEVEL)
 LOGGER.info("{} logger created".format(MODULE_NAME))
 
 
@@ -43,33 +45,67 @@ class LuaScriptUtilities:
         LOGGER.function(func_name)
         LOGGER.info("Initializing Lua script class")
 
+        self.script = None
         self.handle = lj_handle
         self.err = True
-        check = Path(lua_script_name)
-        if check.is_file():
-            self.err = False
-        else:
-            check = Path(lua_script_name)
-            lua_script_name = lua_script_name + ".lua"
-            if check.is_file():
-                self.err = False
-        self.script = lua_script_name
-        if self.err is True:
-            root = Tk()
-            root.filename = filedialog.askopenfilename(initialdir="/", title="Select file",
-                                                       filetypes=(("Lua files", "*.lua"),
-                                                                  ("all files", "*.*")))
-            check = Path(root.filename)
-            if check.is_file():
-                self.script = root.filename
-                self.err = False
-            root.destroy()
-        if self.err is True:
+        self.validate_file(lua_script_name)
+        if self.err is False:
             LOGGER.info("Found Lua script '{}'".format(self.script))
+            vprint("Found Lua script '{}'".format(self.script))
         else:
             LOGGER.info("No valid Lua script found")
+            vprint("No valid Lua script found")
 
-    def load(self):
+    def validate_file(self, lua_script_name):
+        """Verify that the file can be found with some reasonable assumptions"""
+        # options to try
+        names = [lua_script_name,
+                 lua_script_name + '.lua',
+                 CONF.LUA_DIR + lua_script_name,
+                 CONF.LUA_DIR + lua_script_name + '.lua',
+                 ]
+        self.err = True
+        self.script = None
+
+        # Scan until a valid name is found. Set error flag if no valid file found.
+        for name in names:
+            check = Path(name)
+            vprint("Looking for lua script '{}'".format(name))
+            if check.is_file():
+                self.script = name
+                self.err = False
+                break
+
+    def _get_script_ver(self, script):
+        # Assume that the name of the version variable is always the same.
+        lua_version = re.split('\n', (re.split('local *ver *= *', script))[1])[0]
+        return lua_version
+
+    def lua_compress(self, script_lines, compress):
+        """Remove comments and end-of-line blanks
+
+        The script lines are supplied as a list of strings read from the Lua script file. Comments are removed from
+        where they are present (comments are denoted by a leading '--'). Blank lines are deleted, and the remaining
+        lines concatenated (including the newline character). A '\0' termination at the end of the concatenated string
+        is added if it is not present.
+        """
+        compressed_script = ''
+        if compress is True:
+            for line in script_lines:
+                line = line.strip()
+                new_line = re.split('--', line)[0]
+                new_line = re.split(' *$', new_line)[0]
+                if new_line != '':
+                    compressed_script = compressed_script + new_line + '\n'
+        else:
+            compressed_script = compressed_script.join(script_lines)
+
+        # Check for terminating '\0' and add if missing.
+        if compressed_script[-1] != '\0':
+            compressed_script += '\0'
+        return compressed_script
+
+    def load(self, compress=True):
         """Load the current Lua file into the LabJack T7.
 
         This function halts any Lua script running in the T7 and loads the script into it."""
@@ -85,18 +121,22 @@ class LuaScriptUtilities:
             # shut down than others).
             sleep(0.6)
             ljm.eWriteName(self.handle, "LUA_RUN", 0)
+            if ljm.eReadName(self.handle, "LUA_RUN") != 0:
+                vprint("\nError stopping script")
 
             # Read in the file.
             file_handler = open(self.script, 'r')
-            lines = file_handler.readlines()
-            script = ''
-            script = script.join(lines)
-
-            # Check for terminating '\0' and add if missing.
-            if script[-1] != '\0':
-                script += '\0'
+            script_lines = file_handler.readlines()
+            script = self.lua_compress(script_lines, compress)
+            vprint(f"New script version: {self._get_script_ver(script)}")
+            vprint(format(f"Current script version: {ljm.eReadAddress(self.handle, 46000, 3):.3f}"))
             script_length = len(script)
-            print(script)
+            if compress is True:
+                vprint("\nScript (compressed):\n====================\n")
+            else:
+                vprint("\nScript (uncompressed):\n======================\n")
+            vprint(script)
+            vprint(f"\nScript size: {script_length}\n")
 
             # Write the size and the Lua Script to the device.
             ljm.eWriteName(self.handle, "LUA_SOURCE_SIZE", script_length)

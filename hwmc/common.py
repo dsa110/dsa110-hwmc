@@ -12,17 +12,18 @@ class Config:
     try:
         VERSION = ver.get_git_version()
     except AttributeError:
-        print("Invalid version tag.")
         VERSION = '0.0.1'
-    SIM: False
+    SIM = False
+    VERBOSE = False
     # etcd connection details
-    ETCD_ENDPOINT = "192.168.1.132:2379"
+    ETCD_ENDPOINT = "etcdv3service.sas.pvt:2379"
     # Lua script directory
-    LUA_DIR = './'
+    LUA_DIR = '/home/ubuntu/proj/dsa110-shell/dsa110-hwmc/lua-scripts/'
     # Code and firmware version numbers (minimum)
     LJ_HW_VER = 1.300
     LJ_FW_VER = 1.029
     LJ_BOOT_VER = 0.940
+    LUA_VER = 2.000
     # Product ID (exact match)
     LJ_PROD_ID = 7
 
@@ -32,13 +33,14 @@ class Config:
         print("APPLICATION: {}".format(self.APPLICATION))
         print("LOGGING_LEVEL: {}".format(self.LOGGING_LEVEL))
         print("VERSION: {}".format(self.VERSION))
-        print("sim: {}".format(self.sim))
-        print("etcd_endpoint: {}".format(self.etcd_endpoint))
-        print("lua_dir: {}".format(self.lua_dir))
-        print("lj_hw_ver: {}".format(self.lj_hw_ver))
-        print("lj_fw_ver: {}".format(self.lj_fw_ver))
-        print("lj_boot_ver: {}".format(self.lj_boot_ver))
-        print("lj_prod_id: {}".format(self.lj_prod_id))
+        print("SIM: {}".format(self.SIM))
+        print("VERBOSE: {}".format(self.VERBOSE))
+        print("ETCD_ENDPOINT: {}".format(self.ETCD_ENDPOINT))
+        print("LUA_DIR: {}".format(self.LUA_DIR))
+        print("LJ_HW_VER: {}".format(self.LJ_HW_VER))
+        print("LJ_FW_VER: {}".format(self.LJ_FW_VER))
+        print("LJ_BOOT_VER: {}".format(self.LJ_BOOT_VER))
+        print("LJ_PROD_ID: {}".format(self.LJ_PROD_ID))
 
 
 class Const:
