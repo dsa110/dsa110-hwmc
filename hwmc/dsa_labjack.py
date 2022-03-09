@@ -145,7 +145,7 @@ class DiscoverT7:
         self.num_found = 2 * Constants.NUM_SIM
         for i in range(self.num_found):
             a_device_types.append(ljm.constants.dtT7)
-            a_connection_types.append(ljm.constants.ctETHERNET)
+            a_connection_types.append(ljm.constants.ctUSB)
             a_serial_numbers.append("-2")
             a_ip_addresses.append("192.168.1.{}".format(i))
         return a_connection_types, a_device_types, a_serial_numbers
@@ -160,7 +160,7 @@ class DiscoverT7:
         func_name = "{}::{}".format(self.class_name, func)
         try:
             self.num_found, a_device_types, a_connection_types, a_serial_numbers, _ = \
-                ljm.listAll(ljm.constants.dtT7, ljm.constants.ctETHERNET)
+                ljm.listAll(ljm.constants.dtT7, ljm.constants.ctUSB)
 
         except ljm.LJMError as err:
             LOGGER.function(func_name)
