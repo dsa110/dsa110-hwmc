@@ -96,8 +96,14 @@ class DiscoverT7:
 
         if sim:
             a_connection_types, a_device_types, a_serial_numbers = self._create_sim_devices()
+            for i in range(len(a_device_types)):
+                vprint(f"Device type: {a_device_types[i]}, connection type: {a_connection_types[i]},"
+                       f" serial number: {a_serial_numbers[i]}")
         else:
             a_device_types, a_connection_types, a_serial_numbers = self._find_devices()
+            for i in range(len(a_device_types)):
+                vprint(f"Device type: {a_device_types[i]}, connection type: {a_connection_types[i]},"
+                       f" serial number: {a_serial_numbers[i]}")
         if self.num_found > 0:
             sim_ant_num = 1
             sim_beb_num = 1
@@ -145,7 +151,7 @@ class DiscoverT7:
         self.num_found = 2 * Constants.NUM_SIM
         for i in range(self.num_found):
             a_device_types.append(ljm.constants.dtT7)
-            a_connection_types.append(ljm.constants.ctUSB)
+            a_connection_types.append(ljm.constants.ctETHERNET)
             a_serial_numbers.append("-2")
             a_ip_addresses.append("192.168.1.{}".format(i))
         return a_connection_types, a_device_types, a_serial_numbers
@@ -160,7 +166,7 @@ class DiscoverT7:
         func_name = "{}::{}".format(self.class_name, func)
         try:
             self.num_found, a_device_types, a_connection_types, a_serial_numbers, _ = \
-                ljm.listAll(ljm.constants.dtT7, ljm.constants.ctUSB)
+                ljm.listAll(ljm.constants.dtT7, ljm.constants.ctETHERNET)
 
         except ljm.LJMError as err:
             LOGGER.function(func_name)
@@ -437,7 +443,7 @@ class DsaAntLabJack:
         self.logger.function(func_name)
         script = lua.LuaScriptUtilities(script_name, self.lj_handle)
         if script.err is False:
-            script.load()
+            script.load(compress = True)
             self.logger.info("Saving script to flash")
             time.sleep(1.0)
             script.save_to_flash()

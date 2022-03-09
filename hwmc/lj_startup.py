@@ -58,7 +58,7 @@ def t7_startup_check(lj_handle, lua_required, ant_num):
     start_up_state['boot_ver'] = float(format(ljm.eReadName(lj_handle, 'BOOTLOADER_VERSION'),
                                               '.4f'))
     start_up_state['ser_no'] = int(ljm.eReadName(lj_handle, 'SERIAL_NUMBER'))
-    start_up_state['lua_code_ver'] = format(float(ljm.eReadAddress(lj_handle, 46000, 3)), '.3f')
+    start_up_state['lua_code_ver'] = format(ljm.eReadAddress(lj_handle, 46000, 3), '.3f')
     dev_name = bytes(ljm.eReadNameByteArray(lj_handle, 'DEVICE_NAME_DEFAULT', 49))
     d_name = ''
     for device in dev_name:
@@ -95,7 +95,8 @@ def t7_startup_check(lj_handle, lua_required, ant_num):
 
     if try_load is True:
         lua_script_name = CONF.LUA_DIR + "antenna-control.lua"
-        LOGGER.critical("Attempting to download script {} to ant {}".format(lua_script_name, ant_num))
+        LOGGER.critical("Attempting to download script {} to ant {}".format(lua_script_name,
+                                                                            ant_num))
         script = util.LuaScriptUtilities(lua_script_name, lj_handle)
         script.load()
         script.save_to_flash()
