@@ -18,7 +18,7 @@ LOGGER = dsl.DsaSyslogger(subsystem_name=CONF.SUBSYSTEM,
 LOGGER.app(CONF.APPLICATION)
 LOGGER.version(CONF.VERSION)
 LOGGER.level(CONF.LOGGING_LEVEL)
-LOGGER.info("{} logger created".format(MODULE_NAME))
+LOGGER.info(f"{MODULE_NAME} logger created")
 
 
 def t7_startup_check(lj_handle, lua_required, ant_num):
@@ -38,11 +38,11 @@ def t7_startup_check(lj_handle, lua_required, ant_num):
     """
     # Set up class-level logging (per class instance).
     func = inspect.stack()[0][3]
-    func_name = "{}::{}".format(MODULE_NAME, func)
+    func_name = f"{MODULE_NAME}::func{func}"
     LOGGER.app(CONF.APPLICATION)
     LOGGER.version(CONF.VERSION)
     LOGGER.function(func_name)
-    LOGGER.info("Labjack for Ant/BEB {} started".format(ant_num))
+    LOGGER.info(f"Labjack for Ant/BEB {ant_num} started")
 
     start_up_state = dict(ant_num=0, time=0.0, factory=False, prod_id=-1, hw_ver=0.0, fw_ver=0.0,
                           boot_ver=0.0, ser_no=0, dev_name='', lua_running=False,
@@ -50,15 +50,14 @@ def t7_startup_check(lj_handle, lua_required, ant_num):
 
     # Read relevant device information and configuration registers.
     start_up_state['ant_num'] = ant_num
-    start_up_state['time'] = float("{:.8f}".format(Time.now().mjd))
+    start_up_state['time'] = float(f"{Time.now().mjd:.8f}")
     start_up_state['factory'] = bool(ljm.eReadName(lj_handle, 'IO_CONFIG_CHECK_FOR_FACTORY'))
     start_up_state['prod_id'] = int(ljm.eReadName(lj_handle, 'PRODUCT_ID'))
-    start_up_state['hw_ver'] = float(format(ljm.eReadName(lj_handle, 'HARDWARE_VERSION'), '.4f'))
-    start_up_state['fw_ver'] = float(format(ljm.eReadName(lj_handle, 'FIRMWARE_VERSION'), '.4f'))
-    start_up_state['boot_ver'] = float(format(ljm.eReadName(lj_handle, 'BOOTLOADER_VERSION'),
-                                              '.4f'))
+    start_up_state['hw_ver'] = float(f"{ljm.eReadName(lj_handle, 'HARDWARE_VERSION'):.4f}")
+    start_up_state['fw_ver'] = float(f"{ljm.eReadName(lj_handle, 'FIRMWARE_VERSION'):.4f}")
+    start_up_state['boot_ver'] = float(f"{ljm.eReadName(lj_handle, 'BOOTLOADER_VERSION'):.4f}")
     start_up_state['ser_no'] = int(ljm.eReadName(lj_handle, 'SERIAL_NUMBER'))
-    start_up_state['lua_code_ver'] = format(ljm.eReadAddress(lj_handle, 46000, 3), '.3f')
+    start_up_state['lua_code_ver'] = f"{ljm.eReadAddress(lj_handle, 46000, 3):.3f}"
     dev_name = bytes(ljm.eReadNameByteArray(lj_handle, 'DEVICE_NAME_DEFAULT', 49))
     d_name = ''
     for device in dev_name:
@@ -71,21 +70,18 @@ def t7_startup_check(lj_handle, lua_required, ant_num):
     if lua_required is True:
         if start_up_state['lua_running'] is False:
             vprint('Lua script not running. Attempting to load and start script')
-            LOGGER.info("Labjack for Ant/BEB {} Lua script not running. "
-                        "Attempting to load from memory".format(ant_num))
+            LOGGER.info(f"Labjack for Ant/BEB {ant_num} Lua script not running. Attempting to load from memory")
             ljm.eWriteName(lj_handle, 'LUA_LOAD_SAVED', 1)
             time.sleep(2.0)
             try:
                 ljm.eWriteName(lj_handle, 'LUA_RUN', 1)
             except ljm.LJMError:
-                LOGGER.critical("Labjack for Ant/BEB {} cannot load script from EEPROM"
-                                "".format(ant_num))
+                LOGGER.critical(f"Labjack for Ant/BEB {ant_num} cannot load script from EEPROM")
                 try_load = True
 
         if float(start_up_state['lua_code_ver']) < CONF.LUA_VER:
             vprint('Invalid script running. Attempting to load and start new script')
-            LOGGER.info("Labjack for Ant/BEB {} Invalid Lua script. Attempting to load new"
-                        .format(ant_num))
+            LOGGER.info(f"Labjack for Ant/BEB {ant_num} Invalid Lua script. Attempting to load new")
             try_load = True
     else:
         if start_up_state['lua_running'] is True:
@@ -95,8 +91,7 @@ def t7_startup_check(lj_handle, lua_required, ant_num):
 
     if try_load is True:
         lua_script_name = CONF.LUA_DIR + "antenna-control.lua"
-        LOGGER.critical("Attempting to download script {} to ant {}".format(lua_script_name,
-                                                                            ant_num))
+        LOGGER.critical(f"Attempting to download script {lua_script_name} to ant {ant_num}")
         script = util.LuaScriptUtilities(lua_script_name, lj_handle)
         script.load()
         script.save_to_flash()
@@ -104,25 +99,22 @@ def t7_startup_check(lj_handle, lua_required, ant_num):
         script.run()
         time.sleep(1.0)
         if bool(ljm.eReadName(lj_handle, 'LUA_RUN')) is True:
-            LOGGER.critical("Success downloading script {} to ant {}".format(lua_script_name,
-                                                                             ant_num))
+            LOGGER.critical(f"Success downloading script {lua_script_name} to ant {ant_num}")
         else:
-            LOGGER.critical("Failed to download script {} to ant {}".format(lua_script_name,
-                                                                            ant_num))
+            LOGGER.critical(f"Failed to download script {lua_script_name} to ant {ant_num}")
 
         time.sleep(2.0)
         start_up_state['lua_running'] = bool(ljm.eReadName(lj_handle, 'LUA_RUN'))
         if start_up_state['lua_running'] is False:
-            LOGGER.info("Labjack for Ant/BEB {} cannot run script".format(ant_num))
+            LOGGER.info(f"Labjack for Ant/BEB {ant_num} cannot run script")
             start_up_state['config_valid'] = False
-
-    start_up_state['lua_code_ver'] = format(float(ljm.eReadAddress(lj_handle, 46000, 3)), '.3f')
+    start_up_state['lua_code_ver'] = f"{float(ljm.eReadAddress(lj_handle, 46000, 3)):.3f}"
 
     for k, val in start_up_state.items():
-        vprint(" --{}: {}".format(k, val))
-        LOGGER.info("Ant-{}  {}: {}".format(ant_num, k, val))
+        vprint(f" --{k}: {val}")
+        LOGGER.info(f"Ant-{ant_num}  {k}: {val}")
 
     if start_up_state['factory'] is True or start_up_state['prod_id'] != 7:
         start_up_state['config_valid'] = False
-    LOGGER.info("Logging Labjack for Ant/BEB {} startup done".format(ant_num))
+    LOGGER.info(f"Logging Labjack for Ant/BEB {ant_num} startup done")
     return start_up_state

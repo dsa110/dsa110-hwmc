@@ -415,7 +415,7 @@ class HwmcControlPanel:
             for mp in self.ant_mp_data:
                 mp_val = self.ant_mp_data[mp]
                 if mp in self.ant_a_fields:
-                    mp_val = "{:.3f}".format(mp_val)
+                    mp_val = f"{mp_val:.3f}"
                     self.ant_a_fields[mp].delete(1.0, tk.END)
                     self.ant_a_fields[mp].insert(tk.END, mp_val)
                 elif mp in self.e_fields:
@@ -431,7 +431,7 @@ class HwmcControlPanel:
             for mp in self.beb_mp_data:
                 mp_val = self.beb_mp_data[mp]
                 if mp in self.beb_a_fields:
-                    mp_val = "{:.3f}".format(mp_val)
+                    mp_val = f"{mp_val:.3f}"
                     self.beb_a_fields[mp].delete(1.0, tk.END)
                     self.beb_a_fields[mp].insert(tk.END, mp_val)
 
@@ -474,9 +474,9 @@ class HwmcControlPanel:
             self.etcd.cancel_watch(self.watch_id)
             self.ant_num = None
             self.connected = False
-        self.etcd_ant_key = '/mon/ant/{0:d}'.format(ant_num)
-        self.etcd_beb_key = '/mon/beb/{0:d}'.format(ant_num)
-        self.etcd_cmd_key = '/cmd/ant/{0:d}'.format(ant_num)
+        self.etcd_ant_key = '/mon/ant/{ant_num:d}'
+        self.etcd_beb_key = '/mon/beb/{ant_num:d}'
+        self.etcd_cmd_key = '/cmd/ant/{ant_num:d}'
         try:
             self.etcd = etcd.client(host=self.etcd_endpoint[0], port=self.etcd_endpoint[1])
             self.etcd.add_watch_callback(self.etcd_ant_key, self.ant_mp_callback)
@@ -484,10 +484,10 @@ class HwmcControlPanel:
             self.ant_num = ant_num
             self.connected = True
         except NameError:
-            self._show_msg("Connection to 'ant-{}' refused".format(ant_num))
+            self._show_msg(f"Connection to 'ant-{ant_num}' refused")
             self.connected = False
         if self.connected:
-            self._show_msg("Connected to 'ant-{}'".format(ant_num))
+            self._show_msg(f"Connected to 'ant-{ant_num}'")
             self.text_ant_sel.delete(1.0, tk.END)
             self.text_ant_sel.insert(tk.END, self.ant)
 
@@ -503,7 +503,7 @@ class HwmcControlPanel:
     def connect_callback(self):
         """Open an etcd connection for the current antenna."""
         self.ant_num = int(self.tk_ant.get())
-        self.ant = 'ant{}'.format(self.ant_num)
+        self.ant = f'ant{self.ant_num}'
         self._open_connection(self.ant_num)
 
     def quit_callback(self):
@@ -560,9 +560,8 @@ def main():
                         help="Fully qualified name of YAML configuration file. "
                              "If used, other arguments are ignored, except for '-s', '--s'")
     parser.add_argument('-i', '--etcd_ip', metavar='ETCD_IP', type=str, required=False,
-                        default=cpl_config['etcd_endpoint'], help="Etcd server IP address and port."
-                                                                  " Default: {}".format(
-            cpl_config['etcd_endpoint']))
+                        default=cpl_config['etcd_endpoint'], help=f"Etcd server IP address and port."
+                                                                  " Default: {cpl_config['etcd_endpoint']}")
 
     args = parser.parse_args()
     if args.config_file is not None:

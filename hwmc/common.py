@@ -29,18 +29,18 @@ class Config:
 
     def print_config(self):
         """Print out the current values of the variables in this store"""
-        print("SUBSYSTEM: {}".format(self.SUBSYSTEM))
-        print("APPLICATION: {}".format(self.APPLICATION))
-        print("LOGGING_LEVEL: {}".format(self.LOGGING_LEVEL))
-        print("VERSION: {}".format(self.VERSION))
-        print("SIM: {}".format(self.SIM))
-        print("VERBOSE: {}".format(self.VERBOSE))
-        print("ETCD_ENDPOINT: {}".format(self.ETCD_ENDPOINT))
-        print("LUA_DIR: {}".format(self.LUA_DIR))
-        print("LJ_HW_VER: {}".format(self.LJ_HW_VER))
-        print("LJ_FW_VER: {}".format(self.LJ_FW_VER))
-        print("LJ_BOOT_VER: {}".format(self.LJ_BOOT_VER))
-        print("LJ_PROD_ID: {}".format(self.LJ_PROD_ID))
+        print(f"SUBSYSTEM: {self.SUBSYSTEM}")
+        print(f"APPLICATION: {self.APPLICATION}")
+        print(f"LOGGING_LEVEL: {self.LOGGING_LEVEL}")
+        print(f"VERSION: {self.VERSION}")
+        print(f"SIM: {self.SIM}")
+        print(f"VERBOSE: {self.VERBOSE}")
+        print(f"ETCD_ENDPOINT: {self.ETCD_ENDPOINT}")
+        print(f"LUA_DIR: {self.LUA_DIR}")
+        print(f"LJ_HW_VER: {self.LJ_HW_VER}")
+        print(f"LJ_FW_VER: {self.LJ_FW_VER}")
+        print(f"LJ_BOOT_VER: {self.LJ_BOOT_VER}")
+        print(f"LJ_PROD_ID: {self.LJ_PROD_ID}")
 
 
 class Const:
@@ -49,4 +49,4 @@ class Const:
 
     def print_config(self):
         """Print out the current values of the constants in this store"""
-        print("MAX_ANTS: {}".format(self.MAX_ANTS))
+        print(f"MAX_ANTS: {self.MAX_ANTS}")

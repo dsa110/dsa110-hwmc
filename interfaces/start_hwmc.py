@@ -50,7 +50,7 @@ def get_args(config_dict):
     parser.add_argument('-i', '--etcd-ip', metavar='ETCD_IP', type=str, required=False,
                         default=config_dict['etcd_endpoint'],
                         help="Etcd server IP address and port."
-                             " Default: {}".format(config_dict['etcd_endpoint']))
+                             f" Default: {config_dict['etcd_endpoint']}")
     parser.add_argument('-p', '--log-priority', metavar='LOG_PRIORITY', type=str, default=7,
                         required=False, help="Logging priority (emerg, alert, crit, err, warning, "
                                              "notice, info, debug)")

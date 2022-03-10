@@ -20,7 +20,7 @@ LOGGER = dsl.DsaSyslogger(subsystem_name=CONF.SUBSYSTEM,
 LOGGER.app(CONF.APPLICATION)
 LOGGER.version(CONF.VERSION)
 LOGGER.level(CONF.LOGGING_LEVEL)
-LOGGER.info("{} logger created".format(MODULE_NAME))
+LOGGER.info(f"{MODULE_NAME} logger created")
 
 
 class LuaScriptUtilities:
@@ -41,7 +41,7 @@ class LuaScriptUtilities:
         self.class_name = (my_class[my_class.find('.') + 1: my_class.find("'>'") - 1])
 
         func = inspect.stack()[0][3]
-        func_name = "{}::{}".format(self.class_name, func)
+        func_name = f"{self.class_name}::{func}"
         LOGGER.function(func_name)
         LOGGER.info("Initializing Lua script class")
 
@@ -50,8 +50,8 @@ class LuaScriptUtilities:
         self.err = True
         self.validate_file(lua_script_name)
         if self.err is False:
-            LOGGER.info("Found Lua script '{}'".format(self.script))
-            vprint("Found Lua script '{}'".format(self.script))
+            LOGGER.info(f"Found Lua script '{self.script}'")
+            vprint(f"Found Lua script '{self.script}'")
         else:
             LOGGER.info("No valid Lua script found")
             vprint("No valid Lua script found")
@@ -70,7 +70,7 @@ class LuaScriptUtilities:
         # Scan until a valid name is found. Set error flag if no valid file found.
         for name in names:
             check = Path(name)
-            vprint("Looking for lua script '{}'".format(name))
+            vprint(f"Looking for lua script '{name}'")
             if check.is_file():
                 self.script = name
                 self.err = False
@@ -111,7 +111,7 @@ class LuaScriptUtilities:
         This function halts any Lua script running in the T7 and loads the script into it."""
         if self.err is False:
             # Get class for logging.
-            msg = "Loading script: {}".format(self.script)
+            msg = f"Loading script: {self.script}"
             LOGGER.info(msg)
 
             # Disable a running script by writing 0 to LUA_RUN twice
@@ -129,7 +129,7 @@ class LuaScriptUtilities:
             script_lines = file_handler.readlines()
             script = self.lua_compress(script_lines, compress)
             vprint(f"New script version: {self._get_script_ver(script)}")
-            vprint(format(f"Current script version: {ljm.eReadAddress(self.handle, 46000, 3):.3f}"))
+            vprint(f"Current script version: {ljm.eReadAddress(self.handle, 46000, 3):.3f}")
             script_length = len(script)
             if compress is True:
                 vprint("\nScript (compressed):\n====================\n")

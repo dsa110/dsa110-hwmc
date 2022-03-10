@@ -16,7 +16,7 @@ LOGGER = dsl.DsaSyslogger(subsystem_name=CONF.SUBSYSTEM,
 LOGGER.app(CONF.APPLICATION)
 LOGGER.version(CONF.VERSION)
 LOGGER.level(CONF.LOGGING_LEVEL)
-LOGGER.info("{} logger created".format(MODULE_NAME))
+LOGGER.info(f"{MODULE_NAME} logger created")
 
 INTERNAL_FLASH_KEY = 61800
 INTERNAL_FLASH_ERASE = 61820
@@ -59,8 +59,8 @@ def write_config_to_flash(lj_handle, cal_table):
     # Write new values if they are different.
     if not same:
         LOGGER.info("Writing new inclinometer calibration values.")
-        LOGGER.info("Old values: {}".format(old_table))
-        LOGGER.info("New values: {}".format(cal_table))
+        LOGGER.info(f"Old values: {old_table}")
+        LOGGER.info(f"New values: {cal_table}")
         # Start by erasing flash to avoid errors.
         a_addresses = [INTERNAL_FLASH_KEY, INTERNAL_FLASH_ERASE]
         a_data_types = [ljc.INT32, ljc.INT32]

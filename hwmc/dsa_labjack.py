@@ -26,7 +26,6 @@
 
 import inspect
 import json
-import os
 import time
 
 import dsautils.dsa_syslog as dsl
@@ -49,7 +48,7 @@ LOGGER = dsl.DsaSyslogger(subsystem_name=CONF.SUBSYSTEM,
 LOGGER.app(CONF.APPLICATION)
 LOGGER.version(CONF.VERSION)
 LOGGER.function('None')
-LOGGER.info("{} logger created".format(MODULE_NAME))
+LOGGER.info("f{MODULE_NAME} logger created")
 
 
 # -------------- LabJack T7 initialization class ------------------
@@ -84,7 +83,7 @@ class DiscoverT7:
 
         # Set up logging.
         func = inspect.stack()[0][3]
-        func_name = "{}::{}".format(self.class_name, func)
+        func_name = f"{self.class_name}::{func}"
         LOGGER.function(func_name)
         LOGGER.info("Searching for LabJack T7s")
 
@@ -130,13 +129,13 @@ class DiscoverT7:
                     self.ants[lj_location] = DsaAntLabJack(lj_handle, lj_location,
                                                            etcd_endpoint, sim)
                     self.num_ant += 1
-                    LOGGER.info("Antenna {} found".format(lj_location))
-                    vprint("Antenna {} found".format(lj_location))
+                    LOGGER.info(f"Antenna {lj_location} found")
+                    vprint(f"Antenna {lj_location} found")
                 elif lj_type == Constants.BEB_TYPE:
                     self.bebs[lj_location] = DsaBebLabJack(lj_handle, lj_location, etcd_endpoint)
                     self.num_beb += 1
-                    LOGGER.info("BEB {} found".format(lj_location))
-                    vprint("Analog backend {} found".format(lj_location))
+                    LOGGER.info(f"BEB {lj_location} found")
+                    vprint(f"Analog backend {lj_location} found")
 
     def _create_sim_devices(self):
         """Create simulated LJ T7 interfaces.
@@ -151,9 +150,9 @@ class DiscoverT7:
         self.num_found = 2 * Constants.NUM_SIM
         for i in range(self.num_found):
             a_device_types.append(ljm.constants.dtT7)
-            a_connection_types.append(ljm.constants.ctETHERNET)
+            a_connection_types.append(ljm.constants.ctUSB)
             a_serial_numbers.append("-2")
-            a_ip_addresses.append("192.168.1.{}".format(i))
+            a_ip_addresses.append(f"192.168.1.{i}")
         return a_connection_types, a_device_types, a_serial_numbers
 
     def _find_devices(self):
@@ -163,14 +162,14 @@ class DiscoverT7:
         there is a problem.
         """
         func = inspect.stack()[0][3]
-        func_name = "{}::{}".format(self.class_name, func)
+        func_name = f"{self.class_name}::{func}"
         try:
             self.num_found, a_device_types, a_connection_types, a_serial_numbers, _ = \
-                ljm.listAll(ljm.constants.dtT7, ljm.constants.ctETHERNET)
+                ljm.listAll(ljm.constants.dtT7, ljm.constants.ctUSB)
 
         except ljm.LJMError as err:
             LOGGER.function(func_name)
-            LOGGER.critical("Error searching for LabJack devices. LJMError: {}".format(err))
+            LOGGER.critical(f"Error searching for LabJack devices. LJMError: {err}")
             raise ljm.LJMError
         return a_device_types, a_connection_types, a_serial_numbers
 
@@ -192,7 +191,7 @@ class DiscoverT7:
         """
 
         func = inspect.stack()[0][3]
-        func_name = "{}::{}".format(self.class_name, func)
+        func_name = f"{self.class_name}::{func}"
         try:
             addr_bits = int(ljm.eReadName(lj_handle, Constants.ID_WORD))
             if addr_bits < 128:
@@ -202,7 +201,7 @@ class DiscoverT7:
             location = int(addr_bits & 0x7f)
         except ljm.LJMError as err:
             LOGGER.function(func_name)
-            LOGGER.error("Error reading LabJack. LJMError: {}".format(err))
+            LOGGER.error(f"Error reading LabJack. LJMError: {err}")
             lj_type = Constants.NULL_TYPE
             location = 0
         return lj_type, location
@@ -262,29 +261,29 @@ class DsaAntLabJack:
         my_class = str(self.__class__)
         self.class_name = (my_class[my_class.find('.') + 1: my_class.find("'>'") - 1])
         func = inspect.stack()[0][3]
-        func_name = "{}::ant{}.{}".format(self.class_name, ant_num, func)
-        logger_name = '{}_Ant{}'.format(MODULE_NAME, ant_num)
+        func_name = f"{self.class_name}::ant{ant_num}.{func}"
+        logger_name = f'{MODULE_NAME}_Ant{ant_num}'
         self.logger = dsl.DsaSyslogger(subsystem_name=CONF.SUBSYSTEM,
                                        log_level=CONF.LOGGING_LEVEL,
                                        logger_name=logger_name)
         self.logger.app(CONF.APPLICATION)
         self.logger.version(CONF.VERSION)
         self.logger.function(func_name)
-        self.logger.info("{} logger created".format(logger_name))
+        self.logger.info(f"{logger_name} logger created")
         self.logger.info("Initializing")
-        self.logger.info("Antenna {} connected".format(ant_num))
+        self.logger.info(f"Antenna {ant_num} connected")
 
         self.sim = sim
         self.stop = False
         self.lj_handle = lj_handle
         self.ant_num = ant_num
 
-        self.etcd_mon_key = '/mon/ant/{0:d}'.format(ant_num)
-        self.etcd_cmd_key = '/cmd/ant/{0:d}'.format(ant_num)
-        self.etcd_cal_key = '/cal/ant/{0:d}'.format(ant_num)
+        self.etcd_mon_key = f'/mon/ant/{ant_num:d}'
+        self.etcd_cmd_key = f'/cmd/ant/{ant_num:d}'
+        self.etcd_cal_key = f'/cal/ant/{ant_num:d}'
         self.etcd_cmd_all_key = '/cmd/ant/0'
         self.etcd_client = etcd.client(host=etcd_endpoint[0], port=etcd_endpoint[1])
-        vprint("Etcd client: {}\nPort :{}".format(etcd_endpoint[0], etcd_endpoint[1]))
+        vprint(f"Etcd client: {etcd_endpoint[0]}\nPort :{etcd_endpoint[1]}")
         self.cmd_watch_id = None
         self.cmd_all_watch_id = None
         # Install callback function to handle commands
@@ -371,10 +370,10 @@ class DsaAntLabJack:
         """
 
         func = self.ant_num, inspect.stack()[0][3]
-        func_name = "{}::{}.{}".format(self.class_name, self.ant_num, func)
+        func_name = f"{self.class_name}::{self.ant_num}.{func}"
         self.logger.function(func_name)
         self.logger.info("Initializing antenna")
-        vprint("Initializing antenna {}".format(self.ant_num))
+        vprint(f"Initializing antenna {self.ant_num}")
 
         # Digital section
         # Input register for LabJack ID
@@ -404,7 +403,7 @@ class DsaAntLabJack:
 
     def _check_cal(self):
         func = self.ant_num, inspect.stack()[0][3]
-        func_name = "{}::ant{}.{}".format(self.class_name, self.ant_num, func)
+        func_name = f"{self.class_name}::ant{self.ant_num}.{func}"
         if self.etcd_valid:
             val = self.etcd_client.get(self.etcd_cal_key)
             if val[0] is not None:
@@ -414,19 +413,18 @@ class DsaAntLabJack:
                 write_config_to_flash(self.lj_handle, cal_table)
             else:
                 self.logger.function(func_name)
-                self.logger.error("Unable to get inclinometer cal for Ant{}".
-                                  format(self.ant_num))
+                self.logger.error(f"Unable to get inclinometer cal for Ant{self.ant_num}")
 
     def _execute_cal(self, cal_info):
         func = self.ant_num, inspect.stack()[0][3]
-        func_name = "{}::ant{}.{}".format(self.class_name, self.ant_num, func)
+        func_name = f"{self.class_name}::ant{self.ant_num}.{func}"
         self.logger.function(func_name)
         if self.etcd_valid:
             cal_table = cal_info['cal_table']
             write_config_to_flash(self.lj_handle, cal_table)
-            self.logger.info("Updating inclinometer cal for Ant{}".format(self.ant_num))
+            self.logger.info(f"Updating inclinometer cal for Ant{self.ant_num}")
         else:
-            self.logger.error("Unable to get inclinometer cal for Ant{}".format(self.ant_num))
+            self.logger.error(f"Unable to get inclinometer cal for Ant{self.ant_num}")
 
     def load_script(self, script_name):
         """Load a specified Lua script into the LabJack
@@ -439,7 +437,7 @@ class DsaAntLabJack:
         """
 
         func = self.ant_num, inspect.stack()[0][3]
-        func_name = "{}::ant{}.{}".format(self.class_name, self.ant_num, func)
+        func_name = f"{self.class_name}::ant{self.ant_num}.{func}"
         self.logger.function(func_name)
         script = lua.LuaScriptUtilities(script_name, self.lj_handle)
         if script.err is False:
@@ -457,8 +455,8 @@ class DsaAntLabJack:
             else:
                 self.logger.info("Failed to start script")
         else:
-            self.logger.info("Script {} not found".format(script_name))
-            vprint("Script '{}' not found".format(script_name))
+            self.logger.info(f"Script {script_name} not found")
+            vprint(f"Script '{script_name}' not found")
 
     def _get_data(self):
         """Read data from LJ T7 and insert into monitor point dictionary.
@@ -470,7 +468,7 @@ class DsaAntLabJack:
         a_values = [0] * self.LEN_VALS
         a_values = ljm.eNames(self.lj_handle, self.NUM_FRAMES, self.A_NAMES, self.A_WRITES,
                               self.A_NUM_VALS, a_values)
-        time_stamp = float("{:.8f}".format(Time.now().mjd))
+        time_stamp = float(f"{Time.now().mjd:.8f}")
         self.monitor_points['time'] = float(time_stamp)
         self.monitor_points['ant_el'] = a_values[17]
         self.monitor_points['ant_cmd_el'] = a_values[16]
@@ -511,7 +509,7 @@ class DsaAntLabJack:
             execute, along with any argument required.
         """
         func = self.ant_num, inspect.stack()[0][3]
-        func_name = "{}::ant{}.{}".format(self.class_name, self.ant_num, func)
+        func_name = f"{self.class_name}::ant{self.ant_num}.{func}"
         cmd_name = cmd['cmd']
         cmd_name = cmd_name.lower()
         if cmd_name in self.lj_ant_cmds:
@@ -521,12 +519,12 @@ class DsaAntLabJack:
                 if isinstance(args, str):
                     args = args.lower()
                 self.lj_ant_cmds[cmd_name](args)
-                self.logger.info("Executing command '{}' with argument '{}'".format(cmd_name, args))
+                self.logger.info(f"Executing command '{cmd_name}' with argument '{args}'")
             else:
                 self.lj_ant_cmds[cmd_name]()
-                self.logger.info("Executing command '{}'".format(cmd_name))
+                self.logger.info(f"Executing command '{cmd_name}'")
         else:
-            self.logger.error("Unknown command received : '{}'".format(cmd_name))
+            self.logger.error(f"Unknown command received : '{cmd_name}'")
 
     def cmd_callback(self, event):
         """Etcd watch callback function. Called when values of watched keys are updated.
@@ -560,9 +558,9 @@ class DsaAntLabJack:
         This function should be run in a thread for this antenna instance."""
 
         func = inspect.stack()[0][3]
-        func_name = "{}::ant{}.{}".format(self.class_name, self.ant_num, func)
+        func_name = f"{self.class_name}::ant{self.ant_num}.{func}"
         self.logger.function(func_name)
-        self.logger.debug("Running antenna {} thread".format(self.ant_num))
+        self.logger.debug(f"Running antenna {self.ant_num} thread")
         # Run data query loop until stop flag set
         while not self.stop:
             mon_data = self._get_data()
@@ -574,18 +572,18 @@ class DsaAntLabJack:
             if sleep_time > 0.0:
                 time.sleep(sleep_time)
         self.logger.function(func_name)
-        self.logger.info("Antenna {} disconnecting".format(self.ant_num))
+        self.logger.info(f"Antenna {self.ant_num} disconnecting")
         if self.etcd_valid:
-            self.logger.info("Antenna {} closing etcd connection".format(self.ant_num))
+            self.logger.info(f"Antenna {self.ant_num} closing etcd connection")
             if self.cmd_watch_id is not None:
                 self.etcd_client.cancel_watch(self.cmd_watch_id)
-                self.logger.info("Antenna {}: terminating cmd callback".format(self.ant_num))
+                self.logger.info(f"Antenna {self.ant_num}: terminating cmd callback")
             if self.cmd_all_watch_id is not None:
                 self.etcd_client.cancel_watch(self.cmd_all_watch_id)
-                self.logger.info("Antenna {}: terminating cmd all callback".format(self.ant_num))
+                self.logger.info(f"Antenna {self.ant_num}: terminating cmd all callback")
             if self.cal_watch_id is not None:
                 self.etcd_client.cancel_watch(self.cal_watch_id)
-                self.logger.info("Antenna {}: terminating cal callback".format(self.ant_num))
+                self.logger.info(f"Antenna {self.ant_num}: terminating cal callback")
             self.etcd_client.close()
         time.sleep(1)
 
@@ -607,28 +605,28 @@ class DsaAntLabJack:
             state (str): 'on' or 'off'
         """
         func = inspect.stack()[0][3]
-        func_name = "{}::ant{}.{}".format(self.class_name, self.ant_num, func)
+        func_name = f"{self.class_name}::ant{self.ant_num}.{func}"
         if state is False:
             state_val = 1
         elif state is True:
             state_val = 0
         else:
-            msg = "Ant {}: Invalid noise diode state requested: {}".format(self.ant_num, state)
+            msg = f"Ant {self.ant_num}: Invalid noise diode state requested: {state}"
             self.logger.function(func_name)
             self.logger.error(msg)
             return
         if pol == 'a':
-            msg = "Ant {}: Turning polarization A noise diode {}".format(self.ant_num, state)
+            msg = f"Ant {self.ant_num}: Turning polarization A noise diode {state}"
             self.logger.function(func_name)
             self.logger.info(msg)
             ljm.eWriteName(self.lj_handle, Constants.NOISE_A, state_val)
         elif pol == 'b':
-            msg = "Ant {}: Turning polarization B noise diode {}".format(self.ant_num, state)
+            msg = f"Ant {self.ant_num}: Turning polarization B noise diode {state}"
             self.logger.function(func_name)
             self.logger.info(msg)
             ljm.eWriteName(self.lj_handle, Constants.NOISE_B, state_val)
         else:
-            msg = "Ant {}: Invalid noise diode state requested: {}".format(self.ant_num, pol)
+            msg = f"Ant {self.ant_num}: Invalid noise diode state requested: {pol}"
             self.logger.function(func_name)
             self.logger.error(msg)
 
@@ -658,8 +656,8 @@ class DsaAntLabJack:
         Logs the command and calls the low-level function to control the motor.
         """
         func = inspect.stack()[0][3]
-        func_name = "{}::ant{}.{}".format(self.class_name, self.ant_num, func)
-        msg = "Ant {}: Stopping antenna".format(self.ant_num)
+        func_name = f"{self.class_name}::ant{self.ant_num}.{func}"
+        msg = f"Ant {self.ant_num}: Stopping antenna"
         self.logger.function(func_name)
         self.logger.info(msg)
         self._motor_cmd('halt')
@@ -673,11 +671,11 @@ class DsaAntLabJack:
             pos (float): Target elevation for antenna move command.
         """
         func = inspect.stack()[0][3]
-        func_name = "{}::ant{}.{}".format(self.class_name, self.ant_num, func)
+        func_name = f"{self.class_name}::ant{self.ant_num}.{func}"
 
         pos = _validate_num(pos)
         if pos is not None:
-            msg = "Ant {}: Moving to {: .2f}".format(self.ant_num, pos)
+            msg = f"Ant {self.ant_num}: Moving to {pos: .2f}"
             self.logger.function(func_name)
             self.logger.info(msg)
             self._motor_cmd('move', pos)
@@ -685,10 +683,10 @@ class DsaAntLabJack:
     def stop_thread(self):
         """Set a flag to terminate the thread this object is run in."""
         func = inspect.stack()[0][3]
-        func_name = "{}::beb{}.{}".format(self.class_name, self.ant_num, func)
+        func_name = f"{self.class_name}::beb{self.ant_num}.{func}"
         self.logger.function(func_name)
-        self.logger.info("Stopping Ant {}".format(self.ant_num))
-        vprint("Stopping Ant {}".format(self.ant_num))
+        self.logger.info(f"Stopping Ant {self.ant_num}")
+        vprint(f"Stopping Ant {self.ant_num}")
         self.stop = True
 
 
@@ -725,15 +723,15 @@ class DsaBebLabJack:
         my_class = str(self.__class__)
         self.class_name = (my_class[my_class.find('.') + 1: my_class.find("'>'") - 1])
         func = inspect.stack()[0][3]
-        func_name = "{}::beb{}.{}".format(self.class_name, beb_num, func)
-        logger_name = '{}_BEB{}'.format(module_name, beb_num)
+        func_name = "{self.class_name}::beb{beb_num}.{func}"
+        logger_name = f'{module_name}_BEB{beb_num}'
         self.logger = dsl.DsaSyslogger(subsystem_name=CONF.SUBSYSTEM,
                                        log_level=CONF.LOGGING_LEVEL,
                                        logger_name=logger_name)
         self.logger.app(CONF.APPLICATION)
         self.logger.version(CONF.VERSION)
         self.logger.function(func_name)
-        self.logger.info("{} logger created".format(logger_name))
+        self.logger.info(f"{logger_name} logger created")
         self.stop = False
         self.lj_handle = lj_handle
         self.etcd_mon_key = []
@@ -741,14 +739,14 @@ class DsaBebLabJack:
         self.beb_num = beb_num
         self.etcd_valid = False
         for i in range(self.BEB_PER_LJ):
-            self.etcd_mon_key.append('/mon/beb/{0:d}'.format(beb_num + i))
+            self.etcd_mon_key.append(f'/mon/beb/{beb_num + i:d}')
         self.etcd_client = etcd.client(host=etcd_endpoint[0], port=etcd_endpoint[1])
         try:
             self.etcd_client.status()
             self.etcd_valid = True
-            self.logger.info("BEB {} connected to Etcd store".format(beb_num))
+            self.logger.info(f"BEB {beb_num} connected to Etcd store")
         except etcd.exceptions.ConnectionFailedError:
-            self.logger.info("BEB {} cannot connect to Etcd store".format(beb_num))
+            self.logger.info(f"BEB {beb_num} cannot connect to Etcd store")
             self.etcd_valid = False
         self.valid = False
 
@@ -782,10 +780,10 @@ class DsaBebLabJack:
             :obj:'dict': Dictionary of monitor points containing LJ T7 startup information.
         """
         func = inspect.stack()[0][3]
-        func_name = "{}::beb{}.{}".format(self.class_name, self.beb_num, func)
+        func_name = f"{self.class_name}::beb{self.beb_num}.{func}"
         self.logger.function(func_name)
-        self.logger.info("Initializing BEB {}".format(self.beb_num))
-        vprint("Initializing BEB {}".format(self.beb_num))
+        self.logger.info(f"Initializing BEB {self.beb_num}")
+        vprint(f"Initializing BEB {self.beb_num}")
         startup_mp = sf.t7_startup_check(self.lj_handle, lua_required=False, ant_num=self.beb_num)
         # Analog section
         # Input voltage range
@@ -808,7 +806,7 @@ class DsaBebLabJack:
             psu_vals = ljm.eReadNameArray(self.lj_handle, "AIN0", 2)
             lj_temp = ljm.eReadName(self.lj_handle, "TEMPERATURE_DEVICE_K")
             analog_vals = ljm.eReadNameArray(self.lj_handle, "AIN48", 80)
-            time_stamp = float("{:.8f}".format(Time.now().mjd))
+            time_stamp = float(f"{Time.now().mjd:.8f}")
             j = 0
             for i in range(self.BEB_PER_LJ):
                 self.monitor_points[i]['ant_num'] = self.beb_num + i
@@ -847,9 +845,9 @@ class DsaBebLabJack:
 
         # Set up logging
         func = inspect.stack()[0][3]
-        func_name = "{}::beb{}.{}".format(self.class_name, self.beb_num, func)
+        func_name = f"{self.class_name}::beb{self.beb_num}.{func}"
         self.logger.function(func_name)
-        self.logger.info("Running BEB {} thread".format(self.beb_num))
+        self.logger.info(f"Running BEB {self.beb_num} thread")
 
         # Run data query loop until stop flag set
         while not self.stop:
@@ -864,7 +862,7 @@ class DsaBebLabJack:
                 time.sleep(sleep_time)
 
         self.logger.function(func_name)
-        self.logger.info("BEB {} disconnecting".format(self.beb_num))
+        self.logger.info(f"BEB {self.beb_num} disconnecting")
         self.etcd_client.close()
 
     def stop_thread(self):

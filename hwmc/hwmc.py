@@ -28,7 +28,7 @@ LOGGER = dsl.DsaSyslogger(subsystem_name=CONF.SUBSYSTEM,
                           logger_name=MODULE_NAME)
 LOGGER.app(CONF.APPLICATION)
 LOGGER.version(CONF.VERSION)
-LOGGER.info("{} logger created".format(MODULE_NAME))
+LOGGER.info(f"{MODULE_NAME} logger created")
 
 
 class Hwmc:
@@ -78,22 +78,22 @@ class Hwmc:
         # Start running antenna control and monitor threads
         LOGGER.function(func_name)
         if num_ants > 0:
-            LOGGER.info("Starting {} antenna thread(s)".format(num_ants))
-            vprint("Starting {} antenna thread(s)".format(num_ants))
+            LOGGER.info(f"Starting {num_ants} antenna thread(s)")
+            vprint(f"Starting {num_ants} antenna thread(s)")
             for ant_num, ant in self.ants.items():
-                LOGGER.debug("Starting ant {} thread".format(ant_num))
-                ant_thread = Thread(target=ant.run, name='ant{}'.format(ant_num))
+                LOGGER.debug(f"Starting ant {ant_num} thread")
+                ant_thread = Thread(target=ant.run, name=f'ant{ant_num}')
                 ant_thread.start()
         else:
             LOGGER.warning("No antennas detected")
             vprint("No antennas detected")
 
         if num_bebs > 0:
-            vprint("Starting {} BEB thread(s)".format(num_bebs))
-            LOGGER.info("Starting {} BEB thread(s)".format(num_bebs))
+            vprint(f"Starting {num_bebs} BEB thread(s)")
+            LOGGER.info(f"Starting {num_bebs} BEB thread(s)")
             for beb_num, beb in self.bebs.items():
-                LOGGER.debug("Starting BEB {} thread".format(beb_num))
-                beb_thread = Thread(target=beb.run, name='beb{}'.format(beb_num))
+                LOGGER.debug(f"Starting BEB {beb_num} thread")
+                beb_thread = Thread(target=beb.run, name=f'beb{beb_num}')
                 beb_thread.start()
         else:
             LOGGER.warning("No BEBs detected")
@@ -101,8 +101,8 @@ class Hwmc:
 
         time.sleep(5)
         thread_count = threading.activeCount()
-        LOGGER.info("{} threads started".format(thread_count))
-        vprint("{} threads started".format(thread_count))
+        LOGGER.info(f"{thread_count} threads started")
+        vprint(f"{thread_count} threads started")
 
     def stop(self):
         """Send signals to stop the running LJ T7 threads"""

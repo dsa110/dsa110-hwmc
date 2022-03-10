@@ -32,7 +32,7 @@ class PlotItems:
         # Monitor points are for a single antenna. This is the list to choose from.
         ants = []
         for i in range(1, num_ants):
-            ants.append('ant{}'.format(i))
+            ants.append(f'ant{i}')
         len1 = 0
         len2 = 0
         for a in ants:
@@ -90,15 +90,15 @@ class PlotItems:
         new_mp = self.tk_mp.get()
         if new_mp not in self.mp_list:
             self.mp_list.append(new_mp)
-            self.plot_items.insert(tk.END, '{}\n'.format(new_mp))
+            self.plot_items.insert(tk.END, f'{new_mp}\n')
 
     def _delete_callback(self):
         delete_index = self.plot_items.index(tk.INSERT)
         line, _ = delete_index.split('.')
-        from_index = '{}.0'.format(line)
-        to_index = '{}.100'.format(line)
+        from_index = f'{line}.0'
+        to_index = f'{line}.100'
         to_delete = self.plot_items.get(from_index, to_index)
-        to_index = "{}.0".format(int(line) + 1)
+        to_index = f'{int(line) + 1}.0'
         self.mp_list.remove(to_delete)
         self.plot_items.delete(from_index, to_index)
 

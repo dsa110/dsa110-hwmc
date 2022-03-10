@@ -67,7 +67,7 @@ class TestLjStartup(TestCase):
         lua_required = True
         ant_num=7
         start_up_state = su.t7_startup_check(lj_handle, lua_required=lua_required, ant_num=ant_num)
-        print("start_up_state['factory']: {}".format(start_up_state['factory']))
+        print(f"start_up_state['factory']: {start_up_state['factory']}")
         self.assertEqual(start_up_state['factory'], IO_CONFIG_CHECK_FOR_FACTORY)
         self.assertEqual(start_up_state['prod_id'], PRODUCT_ID)
         self.assertEqual(start_up_state['hw_ver'], HARDWARE_VERSION)

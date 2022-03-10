@@ -72,7 +72,7 @@ class MpPlotter:
                         self.ax['1'].set(xlabel='time (min)', ylabel='value')
                         title = ''
                         for m in self.xs:
-                            title = '{}{}, '.format(title, m)
+                            title = f'{title}{m}, '
                             self.ax['1'].set(title=title)
                         self.ax['1'].legend(['A simple line'])
                         for m in self.xs:
@@ -82,7 +82,7 @@ class MpPlotter:
                         for m in self.xs:
                             self.ax[m].clear()
                             self.ax[m].set(xlabel="time (min)", ylabel="value",
-                                           title="{}".format(m))
+                                           title=f"{m}")
                             self.ax[m].plot(self.xs[m], self.ys[m])
 
     def get_mps(self):
@@ -118,7 +118,7 @@ if __name__ == '__main__':
                         "If used, other arguments are ignored, except for '-s', '--s'")
     parser.add_argument('-i', '--etcd_ip', metavar='ETCD_IP', type=str, required=False,
                         default=plt_config['etcd_endpoint'], help="Etcd server IP address and port."
-                        " Default: {}".format(plt_config['etcd_endpoint']))
+                        f" Default: {plt_config['etcd_endpoint']}")
 
     args = parser.parse_args()
     if args.config_file is not None:
@@ -173,8 +173,7 @@ if __name__ == '__main__':
         num_plots = 1
 
     style.use('classic')
-    fig = plt.figure("DSA-110 monitor point display: antenna  {}".format(ant),
-                     facecolor='white')
+    fig = plt.figure(f"DSA-110 monitor point display: antenna  {ant}", facecolor='white')
     ax = {}
     if num_plots == 1:
         ax['1'] = fig.add_subplot(1, 1, 1)
@@ -189,7 +188,7 @@ if __name__ == '__main__':
 
     if mp_plot_list:
         connected = False
-        etcd_mon_key = '/mon/ant/{0:d}'.format(plot_items.selected_ant)
+        etcd_mon_key = f'/mon/ant/{plot_items.selected_ant:d}'
         try:
             etcd_client = etcd.client(host=plt_config['etcd_endpoint'][0],
                                       port=plt_config['etcd_endpoint'][1])
@@ -198,7 +197,7 @@ if __name__ == '__main__':
             etcd_client = None
             connected = False
         if connected:
-            print("Connected to 'ant-{}'".format(ant))
+            print("Connected to f'ant-{ant}'")
         if connected:
             mp_plotter = MpPlotter(num_plots, mp_plot_list, ax)
             etcd_client.add_watch_callback(etcd_mon_key, mp_plotter.mp_callback)
