@@ -404,6 +404,8 @@ class DsaAntLabJack:
     def _check_cal(self):
         func = self.ant_num, inspect.stack()[0][3]
         func_name = f"{self.class_name}::ant{self.ant_num}.{func}"
+        cal_table = [1.0, 2.0, 3.0, 4.0]
+        write_config_to_flash(self.lj_handle, cal_table)
         if self.etcd_valid:
             val = self.etcd_client.get(self.etcd_cal_key)
             if val[0] is not None:
