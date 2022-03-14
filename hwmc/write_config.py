@@ -6,6 +6,7 @@ import dsautils.dsa_syslog as dsl
 from labjack import ljm
 from labjack.ljm import constants as ljc
 
+from hwmc.utilities import vprint as vprint
 from hwmc.common import Config as CONF
 
 # Set up module-level logging.
@@ -27,7 +28,7 @@ INTERNAL_FLASH_READ = 61812
 INTERNAL_FLASH_USER_KEY = 0x6615E336
 
 
-def write_config_to_flash(lj_handle, cal_table):
+def write_config_to_flash(lj_handle, ant, cal_table):
     """Write the supplied configuration values to the LabJack T7 flash memory
 
     This function will take a list of values and write them to the flash memory in the LabJack T7,
@@ -35,6 +36,7 @@ def write_config_to_flash(lj_handle, cal_table):
 
     Args:
         lj_handle (int): A handle to address the T7 module where the data are to be written.
+        ant (int): Antenna number to log
         cal_table (:obj:'list' of 'float'): Table of configuration values to write to flash.
 
     Raises:
@@ -57,10 +59,11 @@ def write_config_to_flash(lj_handle, cal_table):
         addr = addr + 4
 
     # Write new values if they are different.
-    if not same:
-        LOGGER.info("Writing new inclinometer calibration values.")
-        LOGGER.info(f"Old values: {old_table}")
-        LOGGER.info(f"New values: {cal_table}")
+    if not False:
+        LOGGER.info(f"Ant{ant} old inclinometer calibration values: {old_table}")
+        LOGGER.info(f"Ant{ant} new inclinometer calibration values: {cal_table}")
+        vprint(f"Ant{ant} old inclinometer calibration values: {old_table}")
+        vprint(f"Ant{ant} new inclinometer calibration values: {old_table}")
         # Start by erasing flash to avoid errors.
         a_addresses = [INTERNAL_FLASH_KEY, INTERNAL_FLASH_ERASE]
         a_data_types = [ljc.INT32, ljc.INT32]
@@ -97,3 +100,5 @@ def write_config_to_flash(lj_handle, cal_table):
                 LOGGER.error("Failed to restart Lua script after writing config data.")
         except ljm.LJMError:
             LOGGER.error("Failed to restart Lua script after writing config data.")
+    else:
+        LOGGER.info(f"Ant{ant} old inclinometer calibration values unchanged")

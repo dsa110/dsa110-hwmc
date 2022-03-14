@@ -150,7 +150,7 @@ class DiscoverT7:
         self.num_found = 2 * Constants.NUM_SIM
         for i in range(self.num_found):
             a_device_types.append(ljm.constants.dtT7)
-            a_connection_types.append(ljm.constants.ctUSB)
+            a_connection_types.append(ljm.constants.ctETHERNET)
             a_serial_numbers.append("-2")
             a_ip_addresses.append(f"192.168.1.{i}")
         return a_connection_types, a_device_types, a_serial_numbers
@@ -165,7 +165,7 @@ class DiscoverT7:
         func_name = f"{self.class_name}::{func}"
         try:
             self.num_found, a_device_types, a_connection_types, a_serial_numbers, _ = \
-                ljm.listAll(ljm.constants.dtT7, ljm.constants.ctUSB)
+                ljm.listAll(ljm.constants.dtT7, ljm.constants.ctETHERNET)
 
         except ljm.LJMError as err:
             LOGGER.function(func_name)
@@ -303,7 +303,7 @@ class DsaAntLabJack:
         try:
             self.etcd_client.add_watch_callback(self.etcd_cal_key, self.cal_callback)
             self.cal_watch_id = self.etcd_client.add_watch_callback(self.etcd_cal_key,
-                                                                self.cal_callback)
+                                                                    self.cal_callback)
             self.etcd_valid = True
             self.logger.info("Connected to etcd store")
         except etcd.exceptions.ConnectionFailedError:
@@ -404,15 +404,13 @@ class DsaAntLabJack:
     def _check_cal(self):
         func = self.ant_num, inspect.stack()[0][3]
         func_name = f"{self.class_name}::ant{self.ant_num}.{func}"
-        cal_table = [1.0, 2.0, 3.0, 4.0]
-        write_config_to_flash(self.lj_handle, cal_table)
         if self.etcd_valid:
             val = self.etcd_client.get(self.etcd_cal_key)
             if val[0] is not None:
                 j_pkt = val[0].decode('utf-8')
                 cal_info = json.loads(j_pkt)
                 cal_table = cal_info['cal_table']
-                write_config_to_flash(self.lj_handle, cal_table)
+                write_config_to_flash(self.lj_handle, self.ant_num, cal_table)
             else:
                 self.logger.function(func_name)
                 self.logger.error(f"Unable to get inclinometer cal for Ant{self.ant_num}")
@@ -423,7 +421,7 @@ class DsaAntLabJack:
         self.logger.function(func_name)
         if self.etcd_valid:
             cal_table = cal_info['cal_table']
-            write_config_to_flash(self.lj_handle, cal_table)
+            write_config_to_flash(self.lj_handle, self.ant_num, cal_table)
             self.logger.info(f"Updating inclinometer cal for Ant{self.ant_num}")
         else:
             self.logger.error(f"Unable to get inclinometer cal for Ant{self.ant_num}")
@@ -548,6 +546,20 @@ class DsaAntLabJack:
         cal_info = json.loads(value)
         self._execute_cal(cal_info)
 
+    def get_cal_from_etcd(self):
+        if self.etcd_valid:
+            key = f'/cal/ant/{self.ant_num}'
+            vprint(f"Getting key: {key}")
+            raw = self.etcd_client.get(key)[0]
+            if raw is None:
+                vprint("No key found")
+            else:
+                val = raw.decode('ascii')
+                mps = json.loads(val)
+                cal_info = mps['cal_table']
+                vprint(f"Cal table: {cal_info}")
+                self._execute_cal(cal_info)
+
     def send_to_etcd(self, key, mon_data):
         """Convert a monitor point dictionary to JSON and send to etdc key/value store."""
         if self.etcd_valid:
@@ -563,6 +575,8 @@ class DsaAntLabJack:
         func_name = f"{self.class_name}::ant{self.ant_num}.{func}"
         self.logger.function(func_name)
         self.logger.debug(f"Running antenna {self.ant_num} thread")
+        # Check etcd to see if there is an inclinometer calibration key and apply it if there is
+        self.get_cal_from_etcd()
         # Run data query loop until stop flag set
         while not self.stop:
             mon_data = self._get_data()
