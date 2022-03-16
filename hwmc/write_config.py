@@ -63,7 +63,7 @@ def write_config_to_flash(lj_handle, ant, cal_table):
         LOGGER.info(f"Ant{ant} old inclinometer calibration values: {old_table}")
         LOGGER.info(f"Ant{ant} new inclinometer calibration values: {cal_table}")
         vprint(f"Ant{ant} old inclinometer calibration values: {old_table}")
-        vprint(f"Ant{ant} new inclinometer calibration values: {old_table}")
+        vprint(f"Ant{ant} new inclinometer calibration values: {cal_table}")
         # Start by erasing flash to avoid errors.
         a_addresses = [INTERNAL_FLASH_KEY, INTERNAL_FLASH_ERASE]
         a_data_types = [ljc.INT32, ljc.INT32]
