@@ -97,8 +97,10 @@ def write_config_to_flash(lj_handle, ant, cal_table):
             ljm.eWriteName(lj_handle, 'LUA_RUN', 1)
             time.sleep(1.0)
             if ljm.eReadName(lj_handle, 'LUA_RUN') != 1:
-                LOGGER.error("Failed to restart Lua script after writing config data.")
+                LOGGER.error(f"Failed to restart Lua script after writing  Ant{ant} cal data.")
+            else:
+                LOGGER.message(f"Restarted Lua script after writing  Ant{ant} cal data.")
         except ljm.LJMError:
-            LOGGER.error("Failed to restart Lua script after writing config data.")
+            LOGGER.error(f"Failed to restart Lua script after writing Ant{ant} cal data.")
     else:
         LOGGER.info(f"Ant{ant} old inclinometer calibration values unchanged")
