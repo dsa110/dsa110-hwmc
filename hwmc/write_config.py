@@ -51,19 +51,19 @@ def write_config_to_flash(lj_handle, ant, cal_table):
     for value in cal_table:
         ljm.eWriteAddress(lj_handle, INTERNAL_FLASH_READ_POINTER, ljc.INT32, addr)
         old = ljm.eReadAddressArray(lj_handle, INTERNAL_FLASH_READ, ljc.FLOAT32, 1)[0]
-        old_table.append(old)
+        old_table.append(round(old, 6))
         # Numerical representations of new value and value in flash may not be identical.
         # Also test for NaN
         if (old != old) or (abs(old - value) > 0.001):
             same = False
         addr = addr + 4
+    LOGGER.info(f"Ant{ant} old inclinometer calibration values: {old_table}")
+    LOGGER.info(f"Ant{ant} new inclinometer calibration values: {cal_table}")
+    vprint(f"Ant{ant} old inclinometer calibration values: {old_table}")
+    vprint(f"Ant{ant} new inclinometer calibration values: {cal_table}")
 
     # Write new values if they are different.
-    if not False:
-        LOGGER.info(f"Ant{ant} old inclinometer calibration values: {old_table}")
-        LOGGER.info(f"Ant{ant} new inclinometer calibration values: {cal_table}")
-        vprint(f"Ant{ant} old inclinometer calibration values: {old_table}")
-        vprint(f"Ant{ant} new inclinometer calibration values: {cal_table}")
+    if same is False:
         # Start by erasing flash to avoid errors.
         a_addresses = [INTERNAL_FLASH_KEY, INTERNAL_FLASH_ERASE]
         a_data_types = [ljc.INT32, ljc.INT32]
@@ -97,11 +97,11 @@ def write_config_to_flash(lj_handle, ant, cal_table):
             ljm.eWriteName(lj_handle, 'LUA_RUN', 1)
             time.sleep(1.0)
             if ljm.eReadName(lj_handle, 'LUA_RUN') != 1:
-                LOGGER.error(f"Failed to restart Lua script after writing  Ant{ant} cal data.")
-                vprint(f"Failed to restart Lua script after writing  Ant{ant} cal data.")
+                LOGGER.error(f"Failed to restart Lua script after writing Ant{ant} cal data.")
+                vprint(f"Failed to restart Lua script after writing Ant{ant} cal data.")
             else:
-                LOGGER.info(f"Restarted Lua script after writing  Ant{ant} cal data.")
-                vprint(f"Restarted Lua script after writing  Ant{ant} cal data.")
+                LOGGER.info(f"Restarted Lua script after writing Ant{ant} cal data.")
+                vprint(f"Restarted Lua script after writing Ant{ant} cal data.")
         except ljm.LJMError:
             LOGGER.error(f"Failed to restart Lua script after writing Ant{ant} cal data.")
             vprint(f"Failed to restart Lua script after writing Ant{ant} cal data.")
