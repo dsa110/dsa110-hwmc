@@ -103,6 +103,7 @@ class Hwmc:
         thread_count = threading.activeCount()
         LOGGER.info(f"{thread_count} threads started")
         vprint(f"{thread_count} threads started")
+        vprint(f"Threads: {threading.enumerate()}")
 
     def stop(self):
         """Send signals to stop the running LJ T7 threads"""
@@ -116,3 +117,8 @@ class Hwmc:
         vprint("Stopping BEB thread(s)")
         for _, beb in self.bebs.items():
             beb.stop_thread()
+
+        while threading.activeCount() > 1:
+            vprint(f"Threads left: {threading.active_count()}")
+            vprint(f"Threads: {threading.enumerate()}")
+            time.sleep(1)
