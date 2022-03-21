@@ -48,7 +48,7 @@ LOGGER = dsl.DsaSyslogger(subsystem_name=CONF.SUBSYSTEM,
 LOGGER.app(CONF.APPLICATION)
 LOGGER.version(CONF.VERSION)
 LOGGER.function('None')
-LOGGER.info("f{MODULE_NAME} logger created")
+LOGGER.info(f"{MODULE_NAME} logger created")
 
 
 # -------------- LabJack T7 initialization class ------------------
@@ -158,7 +158,7 @@ class DiscoverT7:
     def _find_devices(self):
         """Search the network for LJ T& modules.
 
-        In non-simulate mode _check to see if LabJacks can be detected. Log and raise error if
+        In non-simulate mode check to see if LabJacks can be detected. Log and raise error if
         there is a problem.
         """
         func = inspect.stack()[0][3]
@@ -281,9 +281,10 @@ class DsaAntLabJack:
         self.etcd_mon_key = f'/mon/ant/{ant_num:d}'
         self.etcd_cmd_key = f'/cmd/ant/{ant_num:d}'
         self.etcd_cal_key = f'/cal/ant/{ant_num:d}'
-        self.etcd_cmd_all_key = '/cmd/ant/0'
+        self.etcd_cmd_all_key = 'cmd/ant/0'
         self.etcd_client = etcd.client(host=etcd_endpoint[0], port=etcd_endpoint[1])
         vprint(f"Etcd client: {etcd_endpoint[0]}\nPort :{etcd_endpoint[1]}")
+        self.etcd_valid = True
         self.cmd_watch_id = None
         self.cmd_all_watch_id = None
         # Install callback function to handle commands
@@ -301,7 +302,6 @@ class DsaAntLabJack:
         # Install callback function to handle new calibration parameters
         self.cal_watch_id = None
         try:
-            self.etcd_client.add_watch_callback(self.etcd_cal_key, self.cal_callback)
             self.cal_watch_id = self.etcd_client.add_watch_callback(self.etcd_cal_key,
                                                                     self.cal_callback)
             self.etcd_valid = True
@@ -420,6 +420,7 @@ class DsaAntLabJack:
         func_name = f"{self.class_name}::ant{self.ant_num}.{func}"
         self.logger.function(func_name)
         if self.etcd_valid:
+            vprint(f"cal_info: {cal_info}")
             cal_table = cal_info['cal_table']
             write_config_to_flash(self.lj_handle, self.ant_num, cal_table)
             self.logger.info(f"Updating inclinometer cal for Ant{self.ant_num}")
@@ -575,8 +576,6 @@ class DsaAntLabJack:
         func_name = f"{self.class_name}::ant{self.ant_num}.{func}"
         self.logger.function(func_name)
         self.logger.debug(f"Running antenna {self.ant_num} thread")
-        # Check etcd to see if there is an inclinometer calibration key and apply it if there is
-        self.get_cal_from_etcd()
         # Run data query loop until stop flag set
         while not self.stop:
             mon_data = self._get_data()
@@ -589,18 +588,26 @@ class DsaAntLabJack:
                 time.sleep(sleep_time)
         self.logger.function(func_name)
         self.logger.info(f"Antenna {self.ant_num} disconnecting")
+        vprint(f"Antenna {self.ant_num} disconnecting")
         if self.etcd_valid:
             self.logger.info(f"Antenna {self.ant_num} closing etcd connection")
+            vprint(f"Antenna {self.ant_num} closing etcd connection")
             if self.cmd_watch_id is not None:
                 self.etcd_client.cancel_watch(self.cmd_watch_id)
                 self.logger.info(f"Antenna {self.ant_num}: terminating cmd callback")
+                vprint(f"Antenna {self.ant_num}: terminating cmd callback")
             if self.cmd_all_watch_id is not None:
                 self.etcd_client.cancel_watch(self.cmd_all_watch_id)
                 self.logger.info(f"Antenna {self.ant_num}: terminating cmd all callback")
+                vprint(f"Antenna {self.ant_num}: terminating cmd all callback")
             if self.cal_watch_id is not None:
                 self.etcd_client.cancel_watch(self.cal_watch_id)
                 self.logger.info(f"Antenna {self.ant_num}: terminating cal callback")
+                vprint(f"Antenna {self.ant_num}: terminating cal callback")
             self.etcd_client.close()
+            self.logger.info(f"Antenna {self.ant_num}: terminating etcd client")
+            vprint(f"Antenna {self.ant_num}: terminating etcd client")
+
         time.sleep(1)
 
     def switch_noise_a(self, state):
