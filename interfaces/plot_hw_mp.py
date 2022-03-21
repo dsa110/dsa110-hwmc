@@ -188,7 +188,7 @@ if __name__ == '__main__':
 
     if mp_plot_list:
         connected = False
-        etcd_mon_key = f'/mon/ant/{plot_items.selected_ant:d}'
+        etcd_mon_key = f'mon/ant/{plot_items.selected_ant:d}'
         try:
             etcd_client = etcd.client(host=plt_config['etcd_endpoint'][0],
                                       port=plt_config['etcd_endpoint'][1])
@@ -197,7 +197,7 @@ if __name__ == '__main__':
             etcd_client = None
             connected = False
         if connected:
-            print("Connected to f'ant-{ant}'")
+            print(f"Connected to 'ant-{ant}'")
         if connected:
             mp_plotter = MpPlotter(num_plots, mp_plot_list, ax)
             etcd_client.add_watch_callback(etcd_mon_key, mp_plotter.mp_callback)
