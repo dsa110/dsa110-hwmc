@@ -73,13 +73,13 @@ class HwmcControlPanel:
     def __init__(self, config):
         """Create a control window and populate it with monitor point displays and controls.
 
-        A tkinter winndow is created and poopulated with the appropriate widgets for displaying
+        A tkinter window is created and populated with the appropriate widgets for displaying
         monitor point values and for sending commands to the antenna control system. The
         information for the display and control widgets is taken from the monitor point
         dictionary.
 
         The layout is semi-automatically created with different types of monitor point or
-        control assigned to different frames. Some of the parameters need to be tweaked to
+        control assigned to different frames. Some parameters need to be tweaked to
         improve readability, but as an early-implementation tool this is not fully optimized.
         """
         self.quit = False
@@ -474,9 +474,9 @@ class HwmcControlPanel:
             self.etcd.cancel_watch(self.watch_id)
             self.ant_num = None
             self.connected = False
-        self.etcd_ant_key = '/mon/ant/{ant_num:d}'
-        self.etcd_beb_key = '/mon/beb/{ant_num:d}'
-        self.etcd_cmd_key = '/cmd/ant/{ant_num:d}'
+        self.etcd_ant_key = f'mon/ant/{ant_num:d}'
+        self.etcd_beb_key = f'mon/beb/{ant_num:d}'
+        self.etcd_cmd_key = f'cmd/ant/{ant_num:d}'
         try:
             self.etcd = etcd.client(host=self.etcd_endpoint[0], port=self.etcd_endpoint[1])
             self.etcd.add_watch_callback(self.etcd_ant_key, self.ant_mp_callback)
