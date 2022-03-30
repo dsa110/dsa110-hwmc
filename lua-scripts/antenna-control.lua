@@ -1,5 +1,5 @@
 print("Starting DSA-110 antenna control script")
-local ver = 3.001
+local ver = 3.002
 print(string.format("Ver. %.3f", ver))
 
 -- NOTE: Treat as binary in Git since newline must use Windows convention
@@ -61,7 +61,7 @@ local angOff = aOff + collim
 
 -- Check for 'bad' (initialized) values
 
-if (math.abs(vScale - 2.0) > 0.1) or (math.abs(vOff - 2.5) > 0.1) then
+if (math.abs(vScale - 2.0) > 0.25) or (math.abs(vOff - 2.5) > 0.25) then
     vScale = 2.0
     vOff = 2.5
     angOff = 0.0
@@ -116,8 +116,8 @@ local function encoderRead()
     do
         vs = vs + samples[i]
     end
-    corr = 5.0 * nSamp / vs
-    rdg = corr * mbRead(7026, 3)
+    local corr = 5.0 * nSamp / vs
+    local rdg = corr * mbRead(7026, 3)
     mbWrite(46008, 3, rdg)
     cosval = (rdg - vOff) * gain
     if cosval > 1 then
