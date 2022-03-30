@@ -281,7 +281,7 @@ class DsaAntLabJack:
         self.etcd_mon_key = f'/mon/ant/{ant_num:d}'
         self.etcd_cmd_key = f'/cmd/ant/{ant_num:d}'
         self.etcd_cal_key = f'/cal/ant/{ant_num:d}'
-        self.etcd_cmd_all_key = 'cmd/ant/0'
+        self.etcd_cmd_all_key = '/cmd/ant/0'
         self.etcd_client = etcd.client(host=etcd_endpoint[0], port=etcd_endpoint[1])
         vprint(f"Etcd client: {etcd_endpoint[0]}\nPort :{etcd_endpoint[1]}")
         self.etcd_valid = True
