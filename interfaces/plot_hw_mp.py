@@ -188,7 +188,7 @@ if __name__ == '__main__':
 
     if mp_plot_list:
         connected = False
-        etcd_mon_key = f'mon/ant/{plot_items.selected_ant:d}'
+        etcd_mon_key = f'/mon/ant/{plot_items.selected_ant:d}'
         try:
             etcd_client = etcd.client(host=plt_config['etcd_endpoint'][0],
                                       port=plt_config['etcd_endpoint'][1])
