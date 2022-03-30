@@ -474,9 +474,9 @@ class HwmcControlPanel:
             self.etcd.cancel_watch(self.watch_id)
             self.ant_num = None
             self.connected = False
-        self.etcd_ant_key = f'mon/ant/{ant_num:d}'
-        self.etcd_beb_key = f'mon/beb/{ant_num:d}'
-        self.etcd_cmd_key = f'cmd/ant/{ant_num:d}'
+        self.etcd_ant_key = f'/mon/ant/{ant_num:d}'
+        self.etcd_beb_key = f'/mon/beb/{ant_num:d}'
+        self.etcd_cmd_key = f'/cmd/ant/{ant_num:d}'
         try:
             self.etcd = etcd.client(host=self.etcd_endpoint[0], port=self.etcd_endpoint[1])
             self.etcd.add_watch_callback(self.etcd_ant_key, self.ant_mp_callback)
