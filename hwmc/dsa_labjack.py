@@ -339,11 +339,11 @@ class DsaAntLabJack:
                                'feb_temp_b': -273.15,
                                'psu_volt': 0.0,
                                'lj_temp': 0.0,
-                               'v_scale': 999,
-                               'v_off': 999,
-                               'ang_off': 999,
-                               'a_off': 999,
-                               'collim': 999,
+                               'v_scale': 999.0,
+                               'v_off': 999.0,
+                               'ang_off': 999.0,
+                               'a_off': 999.0,
+                               'collim': 999.0,
                                'fan_err': 0,
                                'emergency_off': False,
                                }
@@ -511,6 +511,8 @@ class DsaAntLabJack:
         self.monitor_points['fan_err'] = bool((dig_val >> 22) & 0b01)
         self.monitor_points['noise_a_on'] = bool(1 - ((dig_val >> 11) & 0b01))
         self.monitor_points['noise_b_on'] = bool(1 - ((dig_val >> 12) & 0b01))
+        if self.ant_num == 16:
+            vprint(a_values)
         return self.monitor_points
 
     def execute_cmd(self, cmd):
