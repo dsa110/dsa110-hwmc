@@ -121,6 +121,7 @@ class LuaScriptUtilities:
             # shut down than others).
             sleep(0.6)
             ljm.eWriteName(self.handle, "LUA_RUN", 0)
+            sleep(0.1)
             if ljm.eReadName(self.handle, "LUA_RUN") != 0:
                 vprint("\nError stopping script")
 
@@ -159,6 +160,8 @@ class LuaScriptUtilities:
                     success = True
                     break
                 time.sleep(0.5)
+           vprint(f"Current script version: {ljm.eReadAddress(self.handle, 46000, 3):.3f}")
+
         return success
 
     def run_on_startup(self):
