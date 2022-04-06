@@ -1,5 +1,5 @@
 print("Starting DSA-110 antenna control script")
-local ver = 3.003
+local ver = 3.004
 print(string.format("Ver. %.3f", ver))
 
 -- NOTE: Treat as binary in Git since newline must use Windows convention
