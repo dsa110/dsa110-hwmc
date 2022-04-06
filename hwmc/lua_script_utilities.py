@@ -160,7 +160,7 @@ class LuaScriptUtilities:
                     success = True
                     break
                 time.sleep(0.5)
-           vprint(f"Current script version: {ljm.eReadAddress(self.handle, 46000, 3):.3f}")
+            vprint(f"Current script version: {ljm.eReadAddress(self.handle, 46000, 3):.3f}")
 
         return success
 
