@@ -1,5 +1,5 @@
 print("Starting DSA-110 antenna control script")
-local ver = 3.002
+local ver = 3.003
 print(string.format("Ver. %.3f", ver))
 
 -- NOTE: Treat as binary in Git since newline must use Windows convention
@@ -66,6 +66,9 @@ if (math.abs(vScale - 2.0) > 0.25) or (math.abs(vOff - 2.5) > 0.25) then
     vOff = 2.5
     angOff = 0.0
 end
+mbWrite(46010, 3, vScale)
+mbWrite(46012, 3, vOff)
+mbWrite(46014, 3, angOff)
 
 -- Create local names for functions.
 local checkInterval = LJ.CheckInterval
