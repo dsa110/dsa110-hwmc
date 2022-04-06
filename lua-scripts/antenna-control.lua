@@ -1,5 +1,5 @@
 print("Starting DSA-110 antenna control script")
-local ver = 3.004
+local ver = 3.005
 print(string.format("Ver. %.3f", ver))
 
 -- NOTE: Treat as binary in Git since newline must use Windows convention
@@ -17,6 +17,12 @@ print(string.format("Ver. %.3f", ver))
 -- 46004: current position, deg.
 -- 46006: error, deg.
 -- 46008: averaged normalised raw inclinometer reading, V.
+-- 46010: voltage scale factor for inclinometer, 1/V.
+-- 46012: voltage offset for inclinometer, V.
+-- 46014: total calibration angle offset for inclinometer, deg.
+-- 46016: initial calibration angle offset for inclinometer, deg.
+-- 46018: time-dependent collimation angle offset for inclinometer, deg.
+-- 46020: averaged power supply reading, V.
 
 -- Immediately make sure digital outputs are in a safe state
 MB.W(2601, 0, 30)        -- Set EIO digital to outputs as required.
@@ -123,6 +129,7 @@ local function encoderRead()
     do
         vs = vs + samples[i]
     end
+    mbWrite(46020, 3, vs / nSamp)
     local corr = 5.0 * nSamp / vs
     local rdg = corr * mbRead(7026, 3)
     mbWrite(46008, 3, rdg)
