@@ -66,9 +66,13 @@ if (math.abs(vScale - 2.0) > 0.25) or (math.abs(vOff - 2.5) > 0.25) then
     vOff = 2.5
     angOff = 0.0
 end
+
+-- Write to registers so they can be read by control system
 mbWrite(46010, 3, vScale)
 mbWrite(46012, 3, vOff)
 mbWrite(46014, 3, angOff)
+mbWrite(46016, 3, aOff)
+mbWrite(46018, 3, collim)
 
 -- Create local names for functions.
 local checkInterval = LJ.CheckInterval

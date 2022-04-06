@@ -236,7 +236,7 @@ class DsaAntLabJack:
     NUM_FRAMES = 5
     A_NAMES = ('AIN0', 'TEMPERATURE_DEVICE_K', 'DIO_STATE', 'USER_RAM1_F32', 'USER_RAM1_U16')
     A_WRITES = (0, 0, 0, 0, 0)
-    A_NUM_VALS = (14, 1, 1, 4, 2)
+    A_NUM_VALS = (14, 1, 1, 9, 2)
     LEN_VALS = sum(A_NUM_VALS)
 
     DRIVE_STATE = {0: ' Off', 1: 'North', 2: 'South', 3: ' Bad'}
@@ -339,6 +339,11 @@ class DsaAntLabJack:
                                'feb_temp_b': -273.15,
                                'psu_volt': 0.0,
                                'lj_temp': 0.0,
+                               'v_scale': 999,
+                               'v_off': 999,
+                               'ang_off': 999,
+                               'a_off': 999,
+                               'collim': 999,
                                'fan_err': 0,
                                'emergency_off': False,
                                }
@@ -489,11 +494,17 @@ class DsaAntLabJack:
         self.monitor_points['psu_volt'] = a_values[12]
         self.monitor_points['ant_el_raw'] = a_values[19]
         self.monitor_points['lj_temp'] = a_values[14] + Const.ABS_ZERO
+        self.monitor_points['v_scale'] = a_values[20]
+        self.monitor_points['v_off'] = a_values[21]
+        self.monitor_points['ang_off'] = a_values[22]
+        self.monitor_points['a_off'] = a_values[23]
+        self.monitor_points['collim'] = a_values[24]
+        self.monitor_points['lj_temp'] = a_values[14] + Const.ABS_ZERO
         dig_val = int(a_values[15])
         self.monitor_points['emergency_off'] = bool((dig_val >> 8) & 0b01)
         self.monitor_points['drv_cmd'] = (dig_val >> 9) & 0b11
         self.monitor_points['drv_act'] = (dig_val >> 14) & 0b11
-        self.monitor_points['drv_state'] = int(a_values[20])
+        self.monitor_points['drv_state'] = int(a_values[25])
         self.monitor_points['brake_on'] = bool(1 - ((dig_val >> 13) & 0b01))
         self.monitor_points['at_north_lim'] = bool(1 - ((dig_val >> 20) & 0b01))
         self.monitor_points['at_south_lim'] = bool(1 - ((dig_val >> 21) & 0b01))
